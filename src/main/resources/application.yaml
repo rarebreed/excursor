@@ -1,0 +1,21 @@
+purecloud:
+  host:
+    api:
+      name: "api.purecloud.com"
+      port: 443
+      useSSL: true
+    auth:
+      name: ""
+      port: 443
+      useSSL: true
+"%dev:":
+  purecloud:
+    host:
+      api:
+        name: "api.purecloud.com"
+        port: 443
+        useSSL: true
+      auth:
+        name: ""
+        port: 443
+        useSSL: true
