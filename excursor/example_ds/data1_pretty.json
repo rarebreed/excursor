@@ -1,0 +1,67 @@
+{ 
+    "name": "John Doe",
+    "age": 28, 
+    "contact_info": {
+        "cell": "",
+        "address": {
+            "state": "Florida",
+            "city": "Orlando",
+            "street": "1234 Juno St."
+        },
+        "email": "foobar@gmail.com"
+    },
+    "company": {
+        "name": "",
+        "address": {
+            "state": "Florida",
+            "city": "Orlando",
+            "street": "7890 Anywhere Ave."
+        },
+        "start": "2023/02/20"
+    },
+    "contacts": {
+        "friends": [
+            {
+                "name": "Brian Blitz",
+                "age": 25, 
+                "contact_info": {
+                    "cell": "",
+                    "address": {
+                        "state": "Florida",
+                        "city": "Orlando",
+                        "street": "1000 Enterprise Ln"
+                    },
+                    "email": "nunya@yahoo.com"
+                }
+            },
+            {
+                "name": "John Doe",
+                "age": 28, 
+                "contact_info": {
+                    "cell": "",
+                    "address": {
+                        "state": "Florida",
+                        "city": "Miami",
+                        "street": ""
+                    },
+                    "email": "jkirk@hotmail.com"
+                }
+            }
+        ],
+        "work": [
+            {
+                "name": "John Doe",
+                "age": 28, 
+                "contact_info": {
+                    "cell": "",
+                    "address": {
+                        "state": "Florida",
+                        "city": "Orlando",
+                        "street": ""
+                    },
+                    "email": ""
+                }
+            }
+        ]
+    }
+}
