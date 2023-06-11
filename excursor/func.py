@@ -1,7 +1,7 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Callable, Generic, Iterable, Self, TypeAlias, TypeVar
+from typing import Any, Callable, Generator, Generic, Iterable, Self, TypeAlias, TypeVar
 
 
 T = TypeVar("T")
@@ -30,14 +30,19 @@ class Maybe(Generic[T], Functor[T]):
                 return Maybe(inner=fun(inner))
 
 
+@dataclass
 class Iter(Generic[T], Functor[T]):
     inner: Iterable[T]
+    g: Generator[T, Any, None] = field(init=False, repr=False)
+
+    def __post_init__(self):
+        self.g = (item for item in self.inner)
 
     def map(self, fun: Callable[[T], R]) -> "Iter[R]":
         return Iter(inner=[fun(x) for x in self.inner])
 
     def take(self, num: int):
-        ...
+        num = min(len(self.inner), num)
 
 
 if __name__ == "__main__":

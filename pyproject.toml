@@ -4,20 +4,37 @@ version = "0.1.0"
 description = ""
 authors = ["Sean Toner <placeoftheway@gmail.com>"]
 readme = "README.md"
+license = "Apache-2.0"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-torch = "^2.0"
-transformers = "^4.29"
 numpy = "^1.24"
 sympy = "^1.12"
-datasets = "^2.12"
 
+# async: for asynchronous IO operations
+httpx = {version = "^0.24", optional = true}
+anyio = {version = "^3.7", optional = true}
 
-# viz
+# ml: popular ml libraries
+datasets = {version = "^2.12", optional = true}
+torch = {version = "^2.0", optional = true}
+transformers = {version = "^4.29",  optional = true}
+
+# viz: visualization including jupyter
 plotly = {version = "^5.14", optional = true}
 ipywidgets = {version = "^8.0", optional = true}
 jupyterlab = {version = "^4.0", optional = true}
+
+# infra: infrastructure tools, like orchestrators and distributed compute
+prefect = {version = "^2.10.12", optional = true}
+# ray: distributed compute
+ray = {extras = ["rllib", "serve", "tune"], version = "^2.4.0"}
+
+# data: tools for data analytics, cleaning and ops
+polars = {extras = ["numpy", "pandas", "pyarrow"], version = "^0.18.0", optional = true}
+pyarrow = {version = "^12.0.0", optional = true}
+scrapy = {version = "^2.9.0", optional = true}
+duckdb = {version = "^0.8.0", optional = true}
 
 
 [tool.poetry.group.dev.dependencies]
@@ -28,7 +45,18 @@ pytest = "^7.3"
 
 [tool.poetry.extras]
 viz = ["plotly", "ipywidgets", "jupyterlab"]
+ml = ["transformers", "datasets", "torch"]
+async = ["httpx", "anyio"]
+infra = ["ray", "prefect"]
+data = ["polars", "pyarrow", "scrapy", "duckdb"]
+ray = ["ray"]
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+
+[tool.ruff]
+fix = true
+line-length = 120
+target-version = "py311"

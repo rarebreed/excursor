@@ -50,9 +50,11 @@ class ProcessResult:
             case [None, _]:
                 print("Process has not finished yet")
             case [code, True] if code != val:
-                raise Exception(f"Process failed with exit code {code} which was not success of {val}")
+                raise Exception(
+                    f"Process failed with exit code {code} which was not success of {val}")
             case [code, False] if code != val:
-                print(f"Process failed with exit code {code} which was not success of {val}")
+                print(
+                    f"Process failed with exit code {code} which was not success of {val}")
             case _:
                 print(f"Process was successful with exit code {code}")
                 successful = True
