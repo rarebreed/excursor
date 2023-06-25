@@ -33,16 +33,17 @@ class Maybe(Generic[T], Functor[T]):
 @dataclass
 class Iter(Generic[T], Functor[T]):
     inner: Iterable[T]
-    g: Generator[T, Any, None] = field(init=False, repr=False)
+    #g: Generator[T, Any, None] = field(init=False, repr=False)
 
     def __post_init__(self):
-        self.g = (item for item in self.inner)
+        self.inner = (item for item in self.inner)
 
     def map(self, fun: Callable[[T], R]) -> "Iter[R]":
-        return Iter(inner=[fun(x) for x in self.inner])
+        return Iter(inner=(fun(x) for x in self.inner))
 
     def take(self, num: int):
         num = min(len(self.inner), num)
+        return Iter(inner=(i for ind, i in enumerate(self.inner) if ind < num))
 
 
 if __name__ == "__main__":
@@ -52,3 +53,5 @@ if __name__ == "__main__":
 
     print(fun2.inner)
     print(fun3.inner)
+
+
