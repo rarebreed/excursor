@@ -33,7 +33,7 @@ class Maybe(Generic[T], Functor[T]):
 @dataclass
 class Iter(Generic[T], Functor[T]):
     inner: Iterable[T]
-    #g: Generator[T, Any, None] = field(init=False, repr=False)
+    # g: Generator[T, Any, None] = field(init=False, repr=False)
 
     def __post_init__(self):
         self.inner = (item for item in self.inner)
@@ -53,5 +53,3 @@ if __name__ == "__main__":
 
     print(fun2.inner)
     print(fun3.inner)
-
-

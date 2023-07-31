@@ -4,9 +4,11 @@ the child process output and continue with other tasks.
 
 import asyncio
 from asyncio import Future, SubprocessTransport
+from asyncio.subprocess import Process
 from dataclasses import dataclass, field
 from pathlib import Path
-from subprocess import PIPE
+from subprocess import PIPE, STDOUT
+import time
 from typing import IO, Any, Self
 
 
@@ -19,9 +21,10 @@ class ChildProcess(asyncio.SubprocessProtocol):
     show_out = True
 
     def pipe_data_received(self, fd: int, data: bytes):
-        self.data += data
+        if self.save:
+            self.data += data
         if self.show_out:
-            print(data.decode(self.encoding), end=None)
+            print(f"{fd}: " + data.decode(self.encoding), end=None)
 
     def process_exited(self):
         self.exit_future.set_result(True)
@@ -63,18 +66,19 @@ class ProcessResult:
 
 @dataclass
 class Run:
-    program: str | None = None
+    cmd: str
     args: list[str] = field(default_factory=list)
     stdin: int | IO[Any] | None = None
     stdout: int | IO[Any] = PIPE
     stderr: int | IO[Any] = PIPE
-    shell = False
+    shell: bool = False
     cwd: str | Path | None = None
     bufsize = 0
     text: bool | None = None
+    sudo: str | None = None
 
-    def w_program(self, prog: str) -> Self:
-        self.program = prog
+    def w_cmd(self, prog: str) -> Self:
+        self.cmd = prog
         return self
 
     def w_args(self, *args: str) -> Self:
@@ -94,7 +98,7 @@ class Run:
         return self
 
     def w_cwd(self, dir: str | Path) -> Self:
-        self.cwd = dir
+        self.dir = dir
         return self
 
     def w_shell(self, sh: bool) -> Self:
@@ -110,7 +114,7 @@ class Run:
         return self
 
     def build(self):
-        if not self.program:
+        if not self.cmd:
             raise Exception("Must supply a cmd string")
         return self
 
@@ -120,7 +124,8 @@ class Run:
         exit_future = Future(loop=loop)
 
         kwargs = self.__dict__.copy()
-        cmd: str = kwargs.pop("program")
+        cmd: str = kwargs.pop("cmd")
+        sudo: str | None = kwargs.pop("sudo")
         args: list[str] = kwargs.pop("args")
 
         runner = loop.subprocess_exec
@@ -142,22 +147,96 @@ class Run:
         transport.close()
         return ProcessResult(future=exit_future, proto=protocol, transport=transport)
 
+    def __call__(self):
+        if self.shell:
+            return self._run_shell()
+        else:
+            return self._run_exec()
+
+    async def _run_exec(self):
+        cmd = self.cmd
+        args = self.args
+        if self.sudo:
+            cmd = "sudo"
+            args = ["-S", "-k", self.cmd, *self.args]
+        print(f"Running command: {cmd} {' '.join(args)}")
+
+        proc = await asyncio.create_subprocess_exec(
+            cmd,
+            *args,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            start_new_session=True,
+            cwd=self.cwd
+        )
+        return await self._get_output(proc)
+
+    async def _run_shell(self):
+        cmd = [self.cmd, *self.args]
+        cmd = " ".join(cmd)
+        if self.sudo:
+            cmd = "sudo -S -k " + cmd
+        print(f"Running command: {cmd}")
+
+        proc = await asyncio.create_subprocess_shell(
+            cmd,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            start_new_session=True,
+            cwd=self.cwd
+        )
+        return await self._get_output(proc)
+
+    async def _get_output(self, proc: Process):
+        # Read the lines in stderr
+        if self.sudo:
+            while True:
+                line = await proc.stderr.readuntil(b": ")
+                line = line.decode()
+
+                if self.sudo and line.startswith("[sudo]"):
+                    print(line)
+                    proc.stdin.write(f"{self.sudo}\n".encode())
+                    break
+
+        output = ""
+        while True:
+            out = await proc.stdout.readline()
+            out = out.decode()
+            output += out
+            print(out, end="")
+
+            if proc.stdout.at_eof():
+                break
+
+        return proc
+
 
 if __name__ == "__main__":
-
-    async def main():
-        runner = Run()
-        proc = await (runner.w_program("iostat")
-                      .w_args("2", "2")
-                      .build()
-                      .run())
+    async def run1():
+        runner1 = Run("iostat", ["2", "2"])
+        proc = await runner1.run()
         proc.is_ok()
 
-        runner = Run()
-        proc2 = await (runner.w_program("echo 'hi sean' > hi.text")
-                       .w_shell(True)
-                       .run())
+    async def run2():
+        runner2 = Run("echo 'hi sean' > hi.text", shell=True)
+        proc2 = await runner2.run()
         proc2.is_ok()
 
-    with asyncio.Runner() as launcher:
-        launcher.run(main())
+    async def main():
+        run = Run(cmd="ls", args=["-al", "/usr/local"], shell=True)
+        # with asyncio.Runner() as launcher:
+        #     coro = run()
+        #     launcher.run(coro)
+
+        # Run all the subprocesses concurrently
+        multi = await asyncio.gather(
+            run2(),
+            run(),
+            run1(),
+        )
+        # note, we don't have to return multi
+        print(multi[2])
+    asyncio.run(main())

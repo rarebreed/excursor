@@ -1,5 +1,3 @@
 import ray
 
 ray.init()
-
-
