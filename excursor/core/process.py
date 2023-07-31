@@ -75,7 +75,16 @@ class Run:
     cwd: str | Path | None = None
     bufsize = 0
     text: bool | None = None
-    sudo: str | None = None
+    sudo: bool = False
+    output: str = ""
+
+    def __post_init__(self):
+        if self.cmd.startswith("sudo") and not self.sudo:
+            self.sudo = True
+
+        # If there's a space in command, we have to run as a shell command
+        if " " in self.cmd:
+            self.shell = True
 
     def w_cmd(self, prog: str) -> Self:
         self.cmd = prog
@@ -147,13 +156,13 @@ class Run:
         transport.close()
         return ProcessResult(future=exit_future, proto=protocol, transport=transport)
 
-    def __call__(self):
+    def __call__(self, *, pw: str | None):
         if self.shell:
-            return self._run_shell()
+            return self._run_shell(pw=pw)
         else:
-            return self._run_exec()
+            return self._run_exec(pw=pw)
 
-    async def _run_exec(self):
+    async def _run_exec(self, *, pw: str | None):
         cmd = self.cmd
         args = self.args
         if self.sudo:
@@ -170,13 +179,14 @@ class Run:
             start_new_session=True,
             cwd=self.cwd
         )
-        return await self._get_output(proc)
+        return await self._get_output(proc, pw)
 
-    async def _run_shell(self):
+    async def _run_shell(self, *, pw: str | None):
         cmd = [self.cmd, *self.args]
         cmd = " ".join(cmd)
         if self.sudo:
-            cmd = "sudo -S -k " + cmd
+            cmd = "sudo -S -k " + cmd.replace("sudo ", "")
+
         print(f"Running command: {cmd}")
 
         proc = await asyncio.create_subprocess_shell(
@@ -187,26 +197,37 @@ class Run:
             start_new_session=True,
             cwd=self.cwd
         )
-        return await self._get_output(proc)
+        return await self._get_output(proc, pw)
 
-    async def _get_output(self, proc: Process):
+    async def _get_output(self, proc: Process, pw: str | None):
         # Read the lines in stderr
-        if self.sudo:
-            while True:
-                line = await proc.stderr.readuntil(b": ")
-                line = line.decode()
+        match [self.sudo, pw]:
+            case [True, str()]:
+                while True:
+                    line = await proc.stderr.readuntil(b": ")
+                    line = line.decode()
 
-                if self.sudo and line.startswith("[sudo]"):
-                    print(line)
-                    proc.stdin.write(f"{self.sudo}\n".encode())
-                    break
+                    if self.sudo and line.startswith("[sudo]"):
+                        print(line)
+                        proc.stdin.write(f"{pw}\n".encode())
+                        break
+            case [True, None]:
+                raise Exception(
+                    f"self.sudo was True, but no password was provided")
+            case _:
+                ...
 
-        output = ""
+        output = self.output
         while True:
             out = await proc.stdout.readline()
             out = out.decode()
             output += out
             print(out, end="")
+
+            err = await proc.stderr.readline()
+            err = err.decode()
+            output += err
+            print(err, end="")
 
             if proc.stdout.at_eof():
                 break
@@ -239,4 +260,9 @@ if __name__ == "__main__":
         )
         # note, we don't have to return multi
         print(multi[2])
-    asyncio.run(main())
+    # asyncio.run(main())
+
+    run = Run(cmd="sudo dnf", args=["update", "-y"])
+    with asyncio.Runner() as launcher:
+        pw = input("Password: ")
+        launcher.run(run(pw=pw))
