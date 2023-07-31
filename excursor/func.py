@@ -1,7 +1,7 @@
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from typing import Any, Callable, Generator, Generic, Iterable, Self, TypeAlias, TypeVar
+from dataclasses import dataclass
+from typing import Callable, Generic, Iterable, TypeAlias, TypeVar
 
 
 T = TypeVar("T")

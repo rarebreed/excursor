@@ -4,7 +4,6 @@
 
 from dataclasses import dataclass, field
 import platform
-from typing import NamedTuple
 
 from excursor.core.process import Run
 

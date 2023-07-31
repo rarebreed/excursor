@@ -7,8 +7,7 @@ from asyncio import Future, SubprocessTransport
 from asyncio.subprocess import Process
 from dataclasses import dataclass, field
 from pathlib import Path
-from subprocess import PIPE, STDOUT
-import time
+from subprocess import PIPE
 from typing import IO, Any, Self
 
 
@@ -134,7 +133,7 @@ class Run:
 
         kwargs = self.__dict__.copy()
         cmd: str = kwargs.pop("cmd")
-        sudo: str | None = kwargs.pop("sudo")
+        kwargs.pop("sudo")
         args: list[str] = kwargs.pop("args")
 
         runner = loop.subprocess_exec
@@ -213,7 +212,7 @@ class Run:
                         break
             case [True, None]:
                 raise Exception(
-                    f"self.sudo was True, but no password was provided")
+                    "self.sudo was True, but no password was provided")
             case _:
                 ...
 
