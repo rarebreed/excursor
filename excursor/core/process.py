@@ -126,7 +126,7 @@ class Run:
             raise Exception("Must supply a cmd string")
         return self
 
-    async def run(self):
+    async def launch(self):
         self.build()
         loop = asyncio.get_running_loop()
         exit_future = Future(loop=loop)
@@ -155,11 +155,17 @@ class Run:
         transport.close()
         return ProcessResult(future=exit_future, proto=protocol, transport=transport)
 
-    def __call__(self, *, pw: str | None):
+    def __call__(self, *, pw: str | None = None):
         if self.shell:
             return self._run_shell(pw=pw)
         else:
             return self._run_exec(pw=pw)
+
+    async def run(self, *, pw: str | None = None, throw=True):
+        proc = await self(pw=pw)
+        if throw and proc.returncode != 0:
+            raise Exception(f"Process failed with exit code {proc.returncode}")
+        return self, proc
 
     async def _run_exec(self, *, pw: str | None):
         cmd = self.cmd
@@ -216,16 +222,15 @@ class Run:
             case _:
                 ...
 
-        output = self.output
         while True:
             out = await proc.stdout.readline()
             out = out.decode()
-            output += out
+            self.output += out
             print(out, end="")
 
             err = await proc.stderr.readline()
             err = err.decode()
-            output += err
+            self.output += err
             print(err, end="")
 
             if proc.stdout.at_eof():
@@ -237,12 +242,12 @@ class Run:
 if __name__ == "__main__":
     async def run1():
         runner1 = Run("iostat", ["2", "2"])
-        proc = await runner1.run()
+        proc = await runner1.launch()
         proc.is_ok()
 
     async def run2():
         runner2 = Run("echo 'hi sean' > hi.text", shell=True)
-        proc2 = await runner2.run()
+        proc2 = await runner2.launch()
         proc2.is_ok()
 
     async def main():
