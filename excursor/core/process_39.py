@@ -1,15 +1,13 @@
-"""This module contains classes to help execute subprocesses asynchronously.  This allows one to execute and grab
-the child process output and continue with other tasks.
+"""This is a python 3.9 compatible version of process.py that doesn't use match or any other 3.10+ feature
 """
 
 import asyncio
 from asyncio import Future, SubprocessTransport
 from asyncio.subprocess import Process
 from dataclasses import dataclass, field
-import os
 from pathlib import Path
 from subprocess import PIPE
-from typing import IO, Any, Literal, Self
+from typing import IO, Any
 
 
 @dataclass
@@ -49,18 +47,16 @@ class ProcessResult:
         ret = self.exit_code()
 
         successful = False
-        match [ret, throw]:
-            case [None, _]:
-                print("Process has not finished yet")
-            case [code, True] if code != val:
-                raise Exception(
-                    f"Process failed with exit code {code} which was not success of {val}")
-            case [code, False] if code != val:
-                print(
-                    f"Process failed with exit code {code} which was not success of {val}")
-            case _:
-                print(f"Process was successful with exit code {code}")
-                successful = True
+
+        if ret is None:
+            print("Process has not finished yet")
+        elif ret != val and throw:
+            raise Exception(f"Process failed with exit code {ret} which was not success of {val}")
+        elif ret != val and not throw:
+            print(f"Process failed with exit code {ret} which was not success of {val}")
+        else:
+            print(f"Process was successful with exit code {ret}")
+            successful = True
         return successful
 
 
@@ -77,7 +73,6 @@ class Run:
     text: bool | None = None
     sudo: bool = False
     output: str = ""
-    env: dict[str] | None = None
 
     def __post_init__(self):
         if self.cmd.startswith("sudo") and not self.sudo:
@@ -87,47 +82,40 @@ class Run:
         if " " in self.cmd:
             self.shell = True
 
-        if self.env is None:
-            self.env = os.environ
-
-    def w_cmd(self, prog: str) -> Self:
+    def w_cmd(self, prog: str) -> "Run":
         self.cmd = prog
         return self
 
-    def w_args(self, *args: str) -> Self:
+    def w_args(self, *args: str) -> "Run":
         self.args = args
         return self
 
-    def w_stdin(self, pipe: int | IO[Any]) -> Self:
+    def w_stdin(self, pipe: int | IO[Any]) -> "Run":
         self.stdin = pipe
         return self
 
-    def w_stdout(self, pipe: int | IO[Any]) -> Self:
+    def w_stdout(self, pipe: int | IO[Any]) -> "Run":
         self.stdout = pipe
         return self
 
-    def w_stderr(self, pipe: int | IO[Any]) -> Self:
+    def w_stderr(self, pipe: int | IO[Any]) -> "Run":
         self.stderr = pipe
         return self
 
-    def w_cwd(self, dir: str | Path) -> Self:
+    def w_cwd(self, dir: str | Path) -> "Run":
         self.dir = dir
         return self
 
-    def w_shell(self, sh: bool) -> Self:
+    def w_shell(self, sh: bool) -> "Run":
         self.shell = sh
         return self
 
-    def w_busize(self, size: int) -> Self:
+    def w_busize(self, size: int) -> "Run":
         self.bufsize = size
         return self
 
-    def w_text(self, txt: bool) -> Self:
+    def w_text(self, txt: bool) -> "Run":
         self.text = txt
-        return self
-
-    def w_env(self, env: dict[str]) -> Self:
-        self.env = env
         return self
 
     def build(self):
@@ -191,8 +179,7 @@ class Run:
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             start_new_session=True,
-            cwd=self.cwd,
-            env=self.env
+            cwd=self.cwd
         )
         return await self._get_output(proc, pw)
 
@@ -210,41 +197,39 @@ class Run:
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             start_new_session=True,
-            cwd=self.cwd,
-            env=self.env
+            cwd=self.cwd
         )
         return await self._get_output(proc, pw)
 
-    async def _read_stream(self, proc: Process, stream: Literal["stdout", "stderr"]):
-        std_stream = proc.stdout if stream == "stdout" else proc.stderr
-        while not std_stream.at_eof():
-            out = await std_stream.readline()
+    async def _get_output(self, proc: Process, pw: str | None):
+        # Read the lines in stderr
+        if self.sudo and type(pw) == "str":
+            while True:
+                line = await proc.stderr.readuntil(b": ")
+                line = line.decode()
+
+                if self.sudo and line.startswith("[sudo]"):
+                    print(line)
+                    proc.stdin.write(f"{pw}\n".encode())
+                    break
+        elif self.sudo and pw is None:
+            raise Exception("self.sudo was True, but no password was provided")
+        else:
+            ...
+
+        while True:
+            out = await proc.stdout.readline()
             out = out.decode()
             self.output += out
             print(out, end="")
 
-    async def _get_output(self, proc: Process, pw: str | None):
-        # Read the lines in stderr
-        match [self.sudo, pw]:
-            case [True, str()]:
-                while True:
-                    line = await proc.stderr.readuntil(b": ")
-                    line = line.decode()
+            err = await proc.stderr.readline()
+            err = err.decode()
+            self.output += err
+            print(err, end="")
 
-                    if self.sudo and line.startswith("[sudo]"):
-                        print(line)
-                        proc.stdin.write(f"{pw}\n".encode())
-                        break
-            case [True, None]:
-                raise Exception(
-                    "self.sudo was True, but no password was provided")
-            case _:
-                ...
-
-        out_task = asyncio.create_task(self._read_stream(proc, "stdout"))
-        err_task = asyncio.create_task(self._read_stream(proc, "stderr"))
-        await out_task
-        await err_task
+            if proc.stdout.at_eof():
+                break
 
         return proc
 
