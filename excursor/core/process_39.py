@@ -1,14 +1,12 @@
-"""This module contains classes to help execute subprocesses asynchronously.  This allows one to execute and grab
-the child process output and continue with other tasks.
+"""This is a python 3.9 compatible version of process.py that doesn't use match or any other 3.10+ feature
 """
 
 import asyncio
 from asyncio.subprocess import Process
 from dataclasses import dataclass, field
-import os
 from pathlib import Path
 from subprocess import PIPE
-from typing import IO, Any, Literal
+from typing import IO, Any
 
 
 @dataclass
@@ -24,7 +22,6 @@ class Run:
     text: bool | None = None
     sudo: bool = False
     output: str = ""
-    env: dict[str] | None = field(repr=False, default=None)
 
     def __post_init__(self):
         if self.cmd.startswith("sudo") and not self.sudo:
@@ -33,9 +30,6 @@ class Run:
         # If there's a space in command, we have to run as a shell command
         if " " in self.cmd:
             self.shell = True
-
-        if self.env is None:
-            self.env = os.environ
 
     def __call__(self, *, pw: str | None = None):
         if self.shell:
@@ -64,8 +58,7 @@ class Run:
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             start_new_session=True,
-            cwd=self.cwd,
-            env=self.env
+            cwd=self.cwd
         )
         return await self._get_output(proc, pw)
 
@@ -83,41 +76,39 @@ class Run:
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             start_new_session=True,
-            cwd=self.cwd,
-            env=self.env
+            cwd=self.cwd
         )
         return await self._get_output(proc, pw)
 
-    async def _read_stream(self, proc: Process, stream: Literal["stdout", "stderr"]):
-        std_stream = proc.stdout if stream == "stdout" else proc.stderr
-        while not std_stream.at_eof():
-            out = await std_stream.readline()
+    async def _get_output(self, proc: Process, pw: str | None):
+        # Read the lines in stderr
+        if self.sudo and type(pw) == "str":
+            while True:
+                line = await proc.stderr.readuntil(b": ")
+                line = line.decode()
+
+                if self.sudo and line.startswith("[sudo]"):
+                    print(line)
+                    proc.stdin.write(f"{pw}\n".encode())
+                    break
+        elif self.sudo and pw is None:
+            raise Exception("self.sudo was True, but no password was provided")
+        else:
+            ...
+
+        while True:
+            out = await proc.stdout.readline()
             out = out.decode()
             self.output += out
             print(out, end="")
 
-    async def _get_output(self, proc: Process, pw: str | None):
-        # Read the lines in stderr
-        match [self.sudo, pw]:
-            case [True, str()]:
-                while True:
-                    line = await proc.stderr.readuntil(b": ")
-                    line = line.decode()
+            err = await proc.stderr.readline()
+            err = err.decode()
+            self.output += err
+            print(err, end="")
 
-                    if self.sudo and line.startswith("[sudo]"):
-                        print(line)
-                        proc.stdin.write(f"{pw}\n".encode())
-                        break
-            case [True, None]:
-                raise Exception(
-                    "self.sudo was True, but no password was provided")
-            case _:
-                ...
-
-        out_task = asyncio.create_task(self._read_stream(proc, "stdout"))
-        err_task = asyncio.create_task(self._read_stream(proc, "stderr"))
-        await out_task
-        await err_task
+            if proc.stdout.at_eof():
+                break
 
         return proc
 
@@ -125,11 +116,13 @@ class Run:
 if __name__ == "__main__":
     async def run1():
         runner1 = Run("iostat", ["2", "2"])
-        await runner1.run()
+        proc = await runner1.launch()
+        proc.is_ok()
 
     async def run2():
         runner2 = Run("echo 'hi sean' > hi.text", shell=True)
-        await runner2.run()
+        proc2 = await runner2.launch()
+        proc2.is_ok()
 
     async def main():
         run = Run(cmd="ls", args=["-al", "/usr/local"], shell=True)
@@ -141,13 +134,13 @@ if __name__ == "__main__":
         multi = await asyncio.gather(
             run2(),
             run(),
-            # run1(),
+            run1(),
         )
         # note, we don't have to return multi
-        print(multi[1].stdout)
-    asyncio.run(main())
+        print(multi[2])
+    # asyncio.run(main())
 
-    # run = Run(cmd="sudo dnf", args=["update", "-y"])
-    # with asyncio.Runner() as launcher:
-    #     pw = input("Password: ")
-    #     launcher.run(run(pw=pw))
+    run = Run(cmd="sudo dnf", args=["update", "-y"])
+    with asyncio.Runner() as launcher:
+        pw = input("Password: ")
+        launcher.run(run(pw=pw))
