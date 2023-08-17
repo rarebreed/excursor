@@ -178,7 +178,7 @@ class PythonDevel:
                     "liblzma-dev"
                 ]
             case "macos":
-                self.devel_libs = []
+                self.devel_libs = ["openssl", "readline", "sqlite3", "xz", "zlib", "tcl-tk"]
 
     async def shell(self) -> str:
         """Determine default shell type"""
@@ -189,8 +189,15 @@ class PythonDevel:
 
     async def _install_sysdeps(self):
         """Install system deps"""
-        sys_in, proc = await self.sys_installer.install(self.devel_libs, pw=self.pw, flags="-y")
-        print(f"{proc.returncode}")
+        if self.sys_installer.distro == "linux":
+            pass
+
+        _, proc = await self.sys_installer.install(self.devel_libs, pw=self.pw, flags="-y")
+        if self.sys_installer.distro == "macos":
+            which = Run("xocde-select --version")
+            _, proc = await which.run(throw=False)
+            if proc.returncode != 0:
+                await Run("xcode-select --install").run()
 
     async def _install_asdf(self):
         """Install asdf"""
@@ -237,7 +244,9 @@ class PythonDevel:
         # TODO: Install nodejs
 
     async def _install_poetry(self):
-        Run("curl -sSL https://install.python-poetry.org | python -", shell=True).run()
+        # Make sure that we set python in our shell
+
+        Run("curl -sSL https://install.python-poetry.org | python3 -").run()
 
     async def _create_venv(self, name="venv"):
         # Install pipx

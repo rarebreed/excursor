@@ -24,7 +24,7 @@ class Run:
     text: bool | None = None
     sudo: bool = False
     output: str = ""
-    env: dict[str] | None = None
+    env: dict[str] | None = field(repr=False, default=None)
 
     def __post_init__(self):
         if self.cmd.startswith("sudo") and not self.sudo:
@@ -141,13 +141,13 @@ if __name__ == "__main__":
         multi = await asyncio.gather(
             run2(),
             run(),
-            run1(),
+            # run1(),
         )
         # note, we don't have to return multi
-        print(multi[2])
-    # asyncio.run(main())
+        print(multi[1].stdout)
+    asyncio.run(main())
 
-    run = Run(cmd="sudo dnf", args=["update", "-y"])
-    with asyncio.Runner() as launcher:
-        pw = input("Password: ")
-        launcher.run(run(pw=pw))
+    # run = Run(cmd="sudo dnf", args=["update", "-y"])
+    # with asyncio.Runner() as launcher:
+    #     pw = input("Password: ")
+    #     launcher.run(run(pw=pw))

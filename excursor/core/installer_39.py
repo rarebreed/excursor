@@ -176,7 +176,7 @@ class PythonDevel:
                 "liblzma-dev"
             ]
         elif distro == "macos":
-            self.devel_libs = []
+            self.devel_libs = ["openssl", "readline", "sqlite3", "xz", "zlib", "tcl-tk"]
 
         # ensure we have pipx.  since __post_init__ is a sync function we will mark
         local_bin_path = Path.home() / ".local/bin"
