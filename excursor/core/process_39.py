@@ -116,13 +116,11 @@ class Run:
 if __name__ == "__main__":
     async def run1():
         runner1 = Run("iostat", ["2", "2"])
-        proc = await runner1.launch()
-        proc.is_ok()
+        await runner1.launch()
 
     async def run2():
         runner2 = Run("echo 'hi sean' > hi.text", shell=True)
-        proc2 = await runner2.launch()
-        proc2.is_ok()
+        await runner2.launch()
 
     async def main():
         run = Run(cmd="ls", args=["-al", "/usr/local"], shell=True)

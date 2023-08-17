@@ -156,8 +156,9 @@ class PythonDevel:
     - pyproject template
     """
     pw: str | None = None
-    sys_installer: Installer = field(init=False)
+    sys_installer: SysInstaller = field(init=False)
     devel_libs: list[str] = field(init=False)
+    local_bin_path = False
 
     def __post_init__(self):
         self.sys_installer = SysInstaller()
@@ -177,67 +178,88 @@ class PythonDevel:
         elif distro == "macos":
             self.devel_libs = ["openssl", "readline", "sqlite3", "xz", "zlib", "tcl-tk"]
 
+        # ensure we have pipx.  since __post_init__ is a sync function we will mark
+        local_bin_path = Path.home() / ".local/bin"
+        self.local_bin_path = f"{local_bin_path}" in os.environ["PATH"]
+
     async def shell(self) -> str:
         """Determine default shell type"""
         sh = Run("echo $SHELL", shell=True)
         await sh()
         return sh.output.strip().split("/")[-1]
 
+    async def which(self, prog: str) -> tuple[str, int | None]:
+        runner, proc = await Run(f"which {prog}").run(throw=False)
+        return runner.output, proc.returncode
+
     async def _install_sysdeps(self):
         """Install system deps"""
+        # brew doesn't have a -y option
         if self.sys_installer.distro == "linux":
             pass
 
-        _, proc = await self.sys_installer.install(self.devel_libs, pw=self.pw, flags="-y")
         if self.sys_installer.distro == "macos":
-            which = Run("xocde-select --version")
-            _, proc = await which.run(throw=False)
-            if proc.returncode != 0:
+            try:
+                await Run("xcode-select --version").run()
+            except BaseException:
                 await Run("xcode-select --install").run()
+
+        _, proc = await self.sys_installer.install(self.devel_libs, pw=self.pw, flags="-y")
+        print(f"{proc.returncode}")
 
     async def _install_asdf(self):
         """Install asdf"""
-        await Run("git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.12.0").run()
-        shell = await self.shell()
-        if shell == "zsh":
-            rc = ".zshrc"
-        elif shell == "bash":
-            rc = ".bashrc"
-        else:
-            raise Exception(f"shell {shell} is not supported")
-        with open(Path.home() / rc, "+a") as zshrc:
-            zshrc.write("\n. $HOME/.asdf/asdf.sh")
+        self._install_sysdeps()
+
+        asdf_path = Path.home() / ".asdf"
+        if not asdf_path.exists():
+            await Run("git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.12.0").run()
+            shell = await self.shell()
+            if shell == "zsh":
+                rc = ".zshrc"
+            elif shell == "bash":
+                rc = ".bashrc"
+            else:
+                raise Exception(f"shell {shell} is not supported")
+            with open(Path.home() / rc, "+a") as zshrc:
+                zshrc.write("\n. $HOME/.asdf/asdf.sh")
 
         # Since we're running inside a python interpreter, the PATH hasn't actually changed, even if we source rc
         # so let's manually add them
-        asdf_path = Path.home() / ".asdf"
         os.environ["PATH"] = f"{asdf_path}/shims:{asdf_path}/bin:" + os.environ["PATH"]
 
         # Install asdf plugins for python, java and nodejs
-        await Run("asdf plugin add python https://github.com/danhper/asdf-python.git").run()
-        await Run("asdf plugin add java https://github.com/halcyon/asdf-java.git").run()
-        await Run("asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git").run()
+        await Run("asdf plugin add python https://github.com/danhper/asdf-python.git").run(throw=False)
+        await Run("asdf plugin add java https://github.com/halcyon/asdf-java.git").run(throw=False)
+        await Run("asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git").run(throw=False)
 
         # Install python 3.11.4 through asdf and make it local
-        await Run("asdf install python 3.11.4").run()
-        await Run("asdf local python 3.11.4").run()
+        await Run("asdf install python 3.11.4").run(throw=False)
+        await Run("asdf global python 3.11.4").run(throw=False)
 
         # TODO: Install graalvm java
         # TODO: Install nodejs
 
     async def _install_poetry(self):
-        Run("curl -sSL https://install.python-poetry.org | python3 -", shell=True).run()
+        _, exit_code = await self.which("poetry")
+        if exit_code == 0:
+            return
+        await Run("curl -sSL https://install.python-poetry.org | python3 -", shell=False).run()
 
     async def _create_venv(self, name="venv"):
-        await Run(f"python3 -m venv {name}").run()
+        _, exit_code = await self.which("virtualenv")
+        if exit_code != 0:
+            await Run("pipx install virtualenv").run()
+
+        await Run(f"virtualenv -p python3.11.4 {name}").run()
 
     async def _create_project(self, name: str, packages: list[PyProjectPkgs]):
         project_path = Path(name)
         if not project_path.exists():
             await Run(f"poetry new {name}").run()
 
-        os.environ["PATH"]
-        os.environ["PATH"] = ""
+        # os.environ["PATH"]
+        # os.environ["PATH"] = ""
 
         for key in packages:
             for pkg in PyProjectPkgs[key]:
@@ -249,12 +271,16 @@ class PythonDevel:
 
 
 if __name__ == "__main__":
+    from argparse import ArgumentParser
+
+    parser = ArgumentParser()
+
     async def main():
         pd = PythonDevel()
         # await pd._install_sysdeps()
         # await pd._install_asdf()
-        # await pd.install_poetry()
-        # await pd._create_venv()
-        await pd._create_project("teaching", ["dev", "ds", "notebook" "data"])
+        # await pd._install_poetry()
+        await pd._create_venv()
+        # await pd._create_project("teaching", ["dev", "ds", "notebook" "data"])
 
     asyncio.run(main())
