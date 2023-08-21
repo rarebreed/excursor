@@ -6,4 +6,4 @@ app = FastAPI()
 
 @app.get("/time")
 def date_now():
-    return {"time": datetime.now().isoformat() }
+    return {"time": datetime.now().isoformat()}
