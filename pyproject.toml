@@ -11,9 +11,10 @@ python = "^3.11"
 numpy = "^1.24"
 sympy = "^1.12"
 
-# async: for asynchronous IO operations
+# serve: service deps
 httpx = {version = "^0.24", optional = true}
-anyio = {version = "^3.7", optional = true}
+fastapi = {version = "^0.101.1", optional = true}
+uvicorn = {extras = ["standard"], version = "^0.23.2", optional = true}
 
 # ml: popular ml libraries
 datasets = {version = "^2.12", optional = true}
@@ -26,7 +27,6 @@ ipywidgets = {version = "^8.0", optional = true}
 jupyterlab = {version = "^4.0", optional = true}
 
 # infra: infrastructure tools, like orchestrators and distributed compute
-prefect = {version = "^2.10.12", optional = true}
 # ray: distributed compute
 ray = {extras = ["rllib", "serve", "tune"], version = "^2.5.1"}
 
@@ -36,12 +36,9 @@ pyarrow = {version = "^12.0.1", optional = true}
 scrapy = {version = "^2.9.0", optional = true}
 duckdb = {version = "^0.8.1", optional = true}
 
-
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.0.275"
 pytest = "^7.3"
-memray = "^1.8.0"
-pyinstrument = "^4.5.0"
 autopep8 = "^2.0.2"
 pycodestyle = "2.10.0"
 pytest-asyncio = "^0.21.1"
@@ -49,7 +46,7 @@ pytest-asyncio = "^0.21.1"
 [tool.poetry.extras]
 viz = ["plotly", "ipywidgets", "jupyterlab"]
 ml = ["transformers", "datasets", "torch"]
-async = ["httpx", "anyio"]
+serve = ["httpx", "fastapi", "uvicorn"]
 infra = ["ray", "prefect"]
 data = ["polars", "pyarrow", "scrapy", "duckdb"]
 ray = ["ray"]
