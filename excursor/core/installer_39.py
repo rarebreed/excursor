@@ -74,7 +74,7 @@ class Installer(ABC):
         flags: str | list[str] | None = None,
         **extras
     ) -> tuple[Run, Process]:
-        extra_args = self.extras(flags, extras)
+        extra_args = self.extras(flags, **extras)
         uninstall = f"{'sudo' if pw else ''}{self.manager} {self.uninstall_cmd} {extra_args} {' '.join(pkgs)}"
         run = Run(cmd=uninstall, args=[])
         proc = await run(pw=pw)
@@ -89,7 +89,7 @@ class Installer(ABC):
         flags: str | list[str] | None = None,
         **extras
     ) -> tuple[Run, Process]:
-        extra_args = self.extras(flags, extras)
+        extra_args = self.extras(flags, **extras)
         install = f"{'sudo' if pw else ''}{self.manager} {self.update_cmd} {extra_args} {' '.join(pkgs)}"
         run = Run(cmd=install, args=[])
         proc = await run(pw=pw)
@@ -209,7 +209,7 @@ class PythonDevel:
 
     async def _install_asdf(self):
         """Install asdf"""
-        self._install_sysdeps()
+        await self._install_sysdeps()
 
         asdf_path = Path.home() / ".asdf"
         if not asdf_path.exists():
@@ -253,20 +253,19 @@ class PythonDevel:
 
         await Run(f"virtualenv -p python3.11.4 {name}").run()
 
-    async def _create_project(self, name: str, packages: list[PyProjectPkgs]):
+    async def _create_project(self, name: str, packages: list[dict[str, list[str]]]):
         project_path = Path(name)
         if not project_path.exists():
             await Run(f"poetry new {name}").run()
 
         # os.environ["PATH"]
         # os.environ["PATH"] = ""
-
-        for key in packages:
-            for pkg in PyProjectPkgs[key]:
-                cmd = f"poetry add --optional {pkg}"
-                if key == "dev":
-                    cmd = f"poetry add {pkg} -G dev"
-                for pkg in PyProjectPkgs[key]:
+        for entry in packages:
+            for name, pkgs in entry.items():
+                for pkg in pkgs:
+                    cmd = f"poetry add --optional {pkg}"
+                    if name == "dev":
+                        cmd = f"poetry add {pkg} -G dev"
                     await Run(cmd).run()
 
 
