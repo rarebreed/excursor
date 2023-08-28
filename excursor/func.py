@@ -22,12 +22,29 @@ class Functor(ABC, Generic[T]):
 class Maybe(Generic[T], Functor[T]):
     inner: T | None
 
-    def map(self, fun: Callable[[T], R]) -> "Maybe[R]":
+    def map(self, fun: Callable[[T], R | None]) -> "Maybe[R]":
+        match self.inner:
+            case None:
+                return Maybe(inner=None)
+            case _:
+                result = fun(self.inner)
+                match result:
+                    case None:
+                        return Maybe(None)
+                    case res:
+                        return Maybe(inner=res)
+
+    def flat_map(self, fun: Callable[[T], "Maybe[R]"]) -> "Maybe[R]":
         match self.inner:
             case None:
                 return Maybe(None)
             case inner:
-                return Maybe(inner=fun(inner))
+                result = fun(inner)
+                match result:
+                    case None:
+                        return Maybe(inner=None)
+                    case _:
+                        return result
 
 
 @dataclass
@@ -42,14 +59,21 @@ class Iter(Generic[T], Functor[T]):
         return Iter(inner=(fun(x) for x in self.inner))
 
     def take(self, num: int):
-        num = min(len(self.inner), num)
+        if num < 1:
+            raise Exception("num arg must be >= 1")
         return Iter(inner=(i for ind, i in enumerate(self.inner) if ind < num))
 
 
 if __name__ == "__main__":
-    fun = Maybe(10)
+    def doubler(x: int) -> int | None:
+        if x < 10:
+            return None
+        else:
+            return 2 * x
+
+    fun = Maybe(3)
     fun2 = fun.map(lambda x: x * 2).map(lambda y: y + 5)
-    fun3 = fun2.map(lambda x: None).map(lambda y: y + 10)
+    fun3 = fun2.map(doubler).map(lambda y: y + 10)
 
     print(fun2.inner)
     print(fun3.inner)
