@@ -9,9 +9,12 @@ In mojo fn's, you must declare local variables either with `let` or `var`.
 - `let` is for immutable variables
 - `var` is for mutable variables
 
+In rust, `let` and `let mut` would be the equivalent identifiers.
+
 ## Argument passing
 
-By default, all parameters are immutable.  An argument to a function can be:
+By default, all parameters are immutable (an implicit keyword `borrowed` is added as a prefix).  An argument to a
+function can be:
 
 - **moved**: where the ownership and _value_ of the variable is transferred to the function
     - The parameter type must have a `__moveinit__` method defined
@@ -27,6 +30,34 @@ By default, all parameters are immutable.  An argument to a function can be:
     - Since the argument value passed in can be directly mutated, it is **not** a copy of the data
     - Since it is a reference, and a mutable, only one such mutable (aka exclusive) reference can exist in the
       lifetime of the use of the function
+
+Note that this is opposite to rust.  In rust, the default is to pass by value and to _move_ it (the data is transferred
+and then once out of scope is gone).  Mojo takes the stand that it is more common to want to pass by (immutable) 
+reference and makes this the default.  You therefore do not need to mark the argument with a sigil (like `&foo`) that
+rust requires when you _do_ want to pass by immutable reference.
+
+When you do want to pass by value and _move_ it, then you do this in mojo
+
+```
+fn foo(owned data: MyStruct):
+    ...
+    # do something with data
+
+obj = MyStruct()
+foo(obj^)  # think of the ^ like it's being given up
+```
+
+When you want to pass by _mutable_ reference in mojo, you would use the `inout` keyword modifer to a parameter
+
+```
+def foo_by_mut_ref(inout data: MyStruct) -> MyStruct:
+    data.value = 10
+    return data
+
+obj = MyStruct()
+let new_obj = foo_by_mut_ref(obj)  # obj still exists and was mutated
+# For this assignment to work, MyStruct must implement either __copyinit__ or __moveinit__
+```
 
 ## Copy vs Move
 
