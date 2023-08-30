@@ -17,10 +17,11 @@ By default, all parameters are immutable and passed by reference (an implicit ke
 However, there are several ways to pass arguments to functions in mojo. An argument to a function can be:
 
 - **moved**: where the ownership and _value_ of the variable is transferred to the function
-    - The parameter type must have a `__moveinit__` method defined
+    - The type of the parameter must have a `__moveinit__` method defined
     - In the fn declaration, the parameter name will be prefixed with `owned` keyword
     - On the caller side, the argument is postfixed with the `^` symbol (eg `foo(age^)`)
     - Once moved, the original variable is no longer accessible (technically, it could be zeroed out but cant be reached)
+    - _moves_ also happen in assignment, when the RHS variable is post-fixed with the `^` sigil (`let obj2 = obj1^`)
 - **by reference (immutably)**: where a shared reference to the argument object is passed in 
     - This is the default, and an implicit `borrowed` keyword is prefixed before the parameter name
     - No mutation of the argument can occur
@@ -104,13 +105,30 @@ variable is really: a name, which points to some memory, and that memory holds s
 
 So, let's break up that statement into its discrete parts:
 
-- `a name`:  this is the symbol that is used to (ultimately) give access to data
-- `which points to some memory`: most languages actually have some kind of mapping of the name to a memory location
-    - these are usually called namespaces, and namespaces are often created at each scoping level
-    - in python, there are several scopes, the one tripping people up the most being the function scope
-    - there are actually several regions of memory
-        - registers: which are in the CPU itself
-        - cache: with different levels, if 
+- `a name`:  this is the symbol that is used to (ultimately) give access to data depending on the scope
+    - The name must first be looked up, because there may be the same name in different scopes
+    - In python there are 4 different kinds of scopes (soon to be 5 in 3.12)
+    - The namespace is like a dictionary that makes the symbol name, to the object (really, it's memory)
+    - Python has some rules about how to look up the name in the nested namespaces (so mojo should too)
+- `which points to some memory`: there are actually several regions of memory
+    - registers: which are in the CPU itself
+    - cache: with different levels, if latency access
+    - stack: a region in memory (typically high address range)
+        - Since the stack is frequently accessed, it is often in the cache
+        - Due to the way cache lines work, when memory is contiguous, it will also pull in "nearby" data into the cache
+            - Therefore, variables in the same stack frame often get pulled into the cache as well
+    - heap: a region in memory (typically low address range)
+        - One reason arrays are faster than maps/dicts is because the data is contiguous.  
+        - This has the benefit that data nearby data is pulled into cache
+        - With maps or most data structures with pointers, the pointers to fields/values may be "far away"
+    - understanding performance with memory is difficult, because it requires some understanding of:
+        - physical vs virtual memory (and cache -> cache lookup -> TLB lookup -> memory or paging)
+        - TLB: Translation Lookaside Buffer, which is a hardware cache of virtual -> physical addressing
+        - Page Tables: a Page is a data structure the OS uses to know what has been mapped to physical memory
+            - and contains a _dirty_ bit (a block has been modified and saving to disk, and cache needs updating)
+        - Cache Lines: the smallest amount of data that can be read/written to cache
+        - Cache miss: when the CPU has to fetch data from main memory (and written to cache depending on strategy)
+        - TLB miss: is when data isn't in the memory and has to be fetched from disk
 - `that memory holds some value`: the term value is tricky, because the value stored in memory may also be a reference
     - in python, _everything_ is a reference to data, not the data itself
         - there is no pass by value, however there are immutable data types like int or str that seem that way
