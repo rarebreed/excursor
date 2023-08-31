@@ -126,11 +126,15 @@ unless your goal was to make the change visible somewhere else (ie, in another t
 
 What about _moves_?  Rust makes it central to the language, because its affine type system requires it.  So it must be
 better than copying right?  Moving data has benefits to compiler analysis, because it means the other variable no longer
-exists, so we don't have to keep track of its lifetime or possible reference aliasing. But moves, like copy, will
-sometimes require transfer of data from one memory location to another and will always require (at some point) calling
-the memory destructor to free up the memory of the old (now moved) data.  For stack allocated data, memory clean up is
-cheap (basically, just moving the register base and stack pointers), but not for heap allocated data. Any time data is
-transferred, it triggers a cascade of operating system syscalls and hardware events that cost time.
+exists.  The affine type system guarantees that a variable is used _at most once_ (related to _linear type system_ which
+guarantees that a type will be used _exactly once_).  In order to be used more than once (used, meaning passed to a
+function, or assignments), requires a reference to the variable, and not the variable itself.
+
+However, moves, like copy, will sometimes require transfer of data from one memory location to another and will always
+require (at some point) calling the memory destructor to free up the memory of the old (now moved) data. For stack
+allocated data, memory clean up is cheap (basically, just moving the register base and stack pointers), but not for heap
+allocated data. Any time data is transferred, it triggers a cascade of operating system syscalls and hardware events
+that cost time.
 
 The old mantra was that developer time was more costly than compute time, which is why dynamic but slow languages like
 perl, python, and javascript took off.  But many domains are starting to feel the pinch of performance.  Especially in
