@@ -183,7 +183,7 @@ So, let's break up that statement into its discrete parts:
 - `a name`:  this is the symbol that is used to (ultimately) give access to data depending on the scope
     - The name must first be looked up, because there may be the same name in different scopes
     - In python there are 4 different kinds of scopes (soon to be 5 in 3.12)
-    - The namespace is like a dictionary that maps the symbol name, to the object (really, it's memory)
+    - The namespace is like a dictionary that maps the symbol name, to the object (really, its memory)
     - Python has some rules about how to look up the name in the nested namespaces (so mojo should too)
 - `which points to some memory`: there are actually several regions of memory
     - registers: which are in the CPU itself
@@ -207,14 +207,14 @@ So, let's break up that statement into its discrete parts:
         - Page Tables: a Page is a data structure the OS uses to know what has been mapped to physical memory
             - and contains a _dirty_ bit (a block has been modified and saving to disk, and cache needs updating)
         - Cache miss: when the CPU has to fetch data from main memory (and written to cache depending on strategy)
-        - TLB miss: is when data isn't in the memory and has to be fetched from disk
+        - TLB miss: is when data isn't in the memory and has to be fetched from disk (ie, paging, aka swapping, occurs)
 - `that memory holds some value`: the term value is tricky, because the value stored in memory may also be a reference
     - in python, _everything_ is a an object, including things like int and float
         - Memory has an address and it is the starting location for how the interpreter (or compiler in mojo's case)
           interprets the bits
             - This is why in system languages like rust and mojo, we must know the _size_ of the data type
             - Given the size of a data type, and its starting memory address, we can interpret the bits into a type
-        - there is no pass by value, however there are immutable data types like int or str that seem that way
+        - there is no pass by value in python, however there are immutable data types like int or str that seem that way
         - This is why when you pass most objects in python to a function, any modification is seen after the function
             - With immutable data types, like int, str, or tuple, a _new_ object
     - in mojo, the memory storing a variable's value might be:
@@ -223,9 +223,11 @@ So, let's break up that statement into its discrete parts:
         - a register value (it actually gets passed directly to a register rather than the stack)
 
 So as we can see, it's more complicated in mojo.  But that's how mojo and other system languages are faster, because
-they don't always have to reach out to memory (a reference) to retrieve the actual value.  This means that some
-familiarity with the stack and the heap are somewhat required (even moreso than rust, because currently, in order to
-create a list or vector data type in mojo, you currently need to roll your own through pointer semantics).
+they don't always have to reach out to memory (a reference) to retrieve the actual value.  In mojo's case, unlike rust,
+it actually has the power to directly store a variable into a register through the @register_passable decorator (in rust
+, you would need to inline assembly to do that). This means that some familiarity with the stack and the heap are 
+somewhat required (even moreso than rust, because currently, in order to create a list or vector data type in mojo, you
+currently need to roll your own through pointer semantics).
 
 ### The Copy Constructor
 
