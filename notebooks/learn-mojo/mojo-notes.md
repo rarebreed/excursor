@@ -230,13 +230,13 @@ So, let's break up that statement into its discrete parts:
         - TLB miss: is when data isn't in the memory and has to be fetched from disk (ie, paging, aka swapping, occurs)
 - `that memory holds some value`: the term value is tricky, because the value stored in memory may also be a reference
     - in python, _everything_ is a an object, including things like int and float
-        - Memory has an address and it is the starting location for how the interpreter (or compiler in mojo's case)
-          interprets the bits
-            - This is why in system languages like rust and mojo, we must know the _size_ of the data type
-            - Given the size of a data type, and its starting memory address, we can interpret the bits into a type
-        - there is no pass by value in python, however there are immutable data types like int or str that seem that way
-        - This is why when you pass most objects in python to a function, any modification is seen after the function
-            - With immutable data types, like int, str, or tuple, a _new_ object
+    - Memory has an address and it is the starting location for how the interpreter (or compiler in mojo's case)
+      interprets the value stored at that address (the value meaning the raw bits)
+        - This is why in system languages like rust and mojo, we must know the _size_ of the data type
+        - Given the size of a data type, and its starting memory address, we can interpret the bits into a type
+    - there is no pass by value in python, however there are immutable data types like int or str that seem that way
+    - This is why when you pass most objects in python to a function, any modification is seen after the function
+        - With immutable data types, like int, str, or tuple, a _new_ object
     - in mojo, the memory storing a variable's value might be:
         - the actual data on the stack
         - a pointer referencing another address in memory (whose value could hold another indirection recursively)
