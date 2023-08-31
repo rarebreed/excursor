@@ -274,7 +274,7 @@ moved (effectively the name lookup of `data` is no longer bound).  In python, as
 still alive and well.  But if you think about it, why do we need to keep `data` around?  After all, didn't I just copy
 over its values to `new_data`?
 
-Actually no, the _value_ of `data` was not copied over.  Python just created a new pointer to the same address that 
+Actually no, the _value_ of `data` was not copied over.  Python just made `new_data` map to the same address that 
 `data` was pointing to, and incremented the ref count.  Any changes to `data` happen in `new_data` and vice-versa.
 Sometimes, this is what you want.  But sometimes, you want a brand new copy of the _value_.  This way I can make changes
 to `new_data` without it changing `data` also.
