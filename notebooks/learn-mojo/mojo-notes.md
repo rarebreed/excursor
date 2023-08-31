@@ -183,11 +183,12 @@ So, let's break up that statement into its discrete parts:
 - `a name`:  this is the symbol that is used to (ultimately) give access to data depending on the scope
     - The name must first be looked up, because there may be the same name in different scopes
     - In python there are 4 different kinds of scopes (soon to be 5 in 3.12)
-    - The namespace is like a dictionary that makes the symbol name, to the object (really, it's memory)
+    - The namespace is like a dictionary that maps the symbol name, to the object (really, it's memory)
     - Python has some rules about how to look up the name in the nested namespaces (so mojo should too)
 - `which points to some memory`: there are actually several regions of memory
     - registers: which are in the CPU itself
-    - cache: with different levels, if latency access
+    - cache: with different levels of latency access
+        - cache line: the minimum amount of memory that can be read from or written to the cache
     - stack: a region in memory (typically high address range depending on OS and CPU arch)
         - Since the stack is frequently accessed, it is often in the cache
         - Due to the way cache lines work, when memory is contiguous, it will also pull in "nearby" data into the cache
@@ -205,7 +206,6 @@ So, let's break up that statement into its discrete parts:
         - TLB: Translation Lookaside Buffer, which is a hardware cache of virtual -> physical addressing
         - Page Tables: a Page is a data structure the OS uses to know what has been mapped to physical memory
             - and contains a _dirty_ bit (a block has been modified and saving to disk, and cache needs updating)
-        - Cache Lines: the smallest amount of data that can be read/written to cache
         - Cache miss: when the CPU has to fetch data from main memory (and written to cache depending on strategy)
         - TLB miss: is when data isn't in the memory and has to be fetched from disk
 - `that memory holds some value`: the term value is tricky, because the value stored in memory may also be a reference
