@@ -123,10 +123,10 @@ In rust, you don't have a choice whether a move will happen or not.  So this beg
 
 To answer the questions above, we need to consider what a variable _really_ is.  We will cover this in a later section.
 
-The value stored at the memory location of the RHS is copied over to the LHS, and then the memory for the RHS is deleted
-In rust's case, the drop doesn't actually happen until the end of the scope, whereas in mojo it's as soon as the 
-variable is no longer used anymore...even within the same scope.  This has a couple of advantages for mojo compared to 
-rust by eliminating the need for [dynamic drop flags](https://doc.rust-lang.org/nomicon/drop-flags.html).
+In a move, the value stored at the memory location of the RHS is copied over to the LHS, and then the memory for the RHS
+is deleted. In rust's case, the drop doesn't actually happen until the end of the scope, whereas in mojo it's as soon as 
+the variable is no longer used anymore...even within the same scope.  This has a couple of advantages for mojo compared 
+to rust by eliminating the need for [dynamic drop flags](https://doc.rust-lang.org/nomicon/drop-flags.html).
 
 But what about references?  Currently, mojo doesn't have explicit references.  They do have `ref` and `mut ref` as
 reserved keywords, but they are still working on fleshing out their lifetime system.  That being said, whenever you pass
