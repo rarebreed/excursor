@@ -50,22 +50,23 @@ fn foo(owned data: MyStruct):
 
 let obj = MyStruct()
 foo(obj^)  # think of the ^ like it's being given up
+print(obj) # will fail, because obj was moved
 
 # Or not in a function but in assignment
 let obj2 = MyStruct()
-let obj3 = obj2^  # after this, obj2 is no longer accessible.  Without the ^, it would be a _copy_ and not a _move_
+# For the next line of code to work, MyStruct must implement __moveinit__
+# after this, obj2 is no longer accessible.  Without the ^, it would be a _copy_ and not a _move_
+let obj3 = obj2^  
 ```
 
 When you want to pass by _mutable_ reference in mojo, you would use the `inout` keyword modifer to a parameter
 
 ```
-def foo_by_mut_ref(inout data: MyStruct) -> MyStruct:
+def foo_by_mut_ref(inout data: MyStruct):
     data.value = 10
-    return data
 
 obj = MyStruct()
-let new_obj = foo_by_mut_ref(obj)  # obj still exists and was mutated
-# For this assignment to work, MyStruct must implement __copyinit__
+foo_by_mut_ref(obj)  # obj still exists and was mutated
 ```
 
 ## Copy vs Move vs Reference
