@@ -101,7 +101,7 @@ In rust, you don't have a choice whether a move will happen or not.  So this beg
 - Why wouldn't you want a `__moveinit__` (or `__copyinit__`) defined?
 - What exactly is moved?
 
-To answer the questions above, we need to consider what a variable _really_ is.
+To answer the questions above, we need to consider what a variable _really_ is.  We will cover this in a later section.
 
 The value stored at the memory location of the RHS is copied over to the LHS, and then the memory for the RHS is deleted
 In rust's case, the drop doesn't actually happen until the end of the scope, whereas in mojo it's as soon as the 
@@ -126,7 +126,7 @@ First off ask yourself
 
 - Why do we even need to make the distinction between copy and move?  
 - Wouldn't it just be easier to always copy data?
-- Or conversely, always directly update the value itself instead of making copies?
+- Or conversely, always directly update the value itself through a mutable reference instead of a copy (as python does)?
 - And why a move if we can just copy? What good does transferring data do?
 
 Some of the answers to those questions requires an understanding of memory, and the performance characteristics of
@@ -139,17 +139,19 @@ exists.  The affine type system guarantees that a variable is used _at most once
 guarantees that a type will be used _exactly once_).  In order to be used more than once (used, meaning passed to a
 function, or assignments), requires a reference to the variable, and not the variable itself.
 
-However, moves, like copy, will sometimes require transfer of data from one memory location to another and will always
-require (at some point) calling the memory destructor to free up the memory of the old (now moved) data. For stack
-allocated data, memory clean up is cheap (basically, just moving the register base and stack pointers), but not for heap
-allocated data. Any time data is transferred, it triggers a cascade of operating system syscalls and hardware events
-that cost time.
+However, moves, like copy, will (usually) require transfer of data from one memory location to another and will always
+require (at some point) calling the memory destructor to free up the memory of the old now moved data. For stack
+allocated data, memory clean up is cheap (basically, just moving the register base and stack pointers) (TODO: verify
+this is still true, as new security features in processors may now zero out memory on the stack so that the old
+data can't be read either as a bug or an exploit which can happen if the processor just overwrites the stack frame
+by shifting the stack and base registers to point to the next stack frame), but not for heap allocated data. Any time 
+data is transferred, it triggers a cascade of operating system syscalls and hardware events that cost time.
 
 The old mantra was that developer time was more costly than compute time, which is why dynamic but slow languages like
 perl, python, and javascript took off.  But many domains are starting to feel the pinch of performance.  Especially in
 Big Data realms, where Garbage Collector pauses, OOM issues, and long compute instance hours has become a big concern.
-With the growth of Big Data, especially with regards to Machine Learning growing 10x every 18 months (recall Moore's Law
-was just 2x every 18 months), clearly, something is intractable.
+With the growth of Big Data, especially with regards to [Machine Learning growing 10x every 18 months](https://thenewstack.io/how-ray-a-distributed-ai-framework-helps-power-chatgpt/) 
+(recall Moore's Law was just 2x every 18 months), clearly, something is intractable.
 
 This was why mojo was invented; to reap as much unused power from hardware accelerators as possible.  By hardware
 accelerator, this isn't just GPUs or TPUs, but unused specialized SIMD registers in vanilla CPUs.  The growth of compute
@@ -164,6 +166,9 @@ lastly, we should think about the energy costs it takes to run our programs, jus
 efficiency of our cars (if you're still using internal combustion engines).
 
 ### A variable's multiple identities
+
+All of the above is to show that memory is a severe bottleneck to performance, and it's a reason why it's good to know
+why there are copies, moves, and references in the first place.
 
 This is not specific to mojo, but is required understanding nevertheless.  This knowledge will help in understanding how
 and why copy and move constructors may or may not be needed in low-level system's programming languages such as mojo, 
@@ -183,14 +188,18 @@ So, let's break up that statement into its discrete parts:
 - `which points to some memory`: there are actually several regions of memory
     - registers: which are in the CPU itself
     - cache: with different levels, if latency access
-    - stack: a region in memory (typically high address range)
+    - stack: a region in memory (typically high address range depending on OS and CPU arch)
         - Since the stack is frequently accessed, it is often in the cache
         - Due to the way cache lines work, when memory is contiguous, it will also pull in "nearby" data into the cache
             - Therefore, variables in the same stack frame often get pulled into the cache as well
+        - The stack grows down (when it starts at a high address)
     - heap: a region in memory (typically low address range)
         - One reason arrays are faster than maps/dicts is because the data is contiguous.  
         - This has the benefit that data nearby data is pulled into cache
         - With maps or most data structures with pointers, the pointers to fields/values may be "far away"
+        - The heap (usually) grows up when it starts in the low address (but actually, the memory allocator
+          will scan the free blocks to find a block of memory of a size that fits the request)
+            - This is why memory fragmentation is a thing, and can affect rust (and mojo too, since it has no GC)
     - understanding performance with memory is difficult, because it requires some understanding of:
         - physical vs virtual memory (and cache -> cache lookup -> TLB lookup -> memory or paging)
         - TLB: Translation Lookaside Buffer, which is a hardware cache of virtual -> physical addressing
