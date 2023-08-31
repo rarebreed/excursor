@@ -23,11 +23,20 @@ So if you are not familiar with the terms, there are generally two different kin
 - by value: where the value of a variable is used
 - by reference: where the value is indirectly retrieved through reference or pointer dereferencing
 
+This is sometimes confusing to people, because pointers or references can be hard to conceptualize.  If it helps, think
+about _value equality_ versus _identity equality_ which is what Java does.  By default, in java, the `equals` method
+compares _identity equality_, meaning "does this variable point to the same memory as this other variable?".  But 95% of
+the time what we care about is _value equality_, or "does this variable have the same contents of this other variable?".
+
+Also, a brief discussion of `ownership` needs to be mentioned.  Similarly to rust, mojo has a concept of ownership which
+basically just means "who is responsible for cleaning up this data?".  In languages without Garbage Collectors, this is
+very important (and is what C and C++ lack).
+
 In mojo, by default, all parameters are immutable and passed by reference (an implicit keyword `borrowed` is added as a 
 prefix to the parameter name so that `foo(borrowed age: Int)` and `foo(age: Int)` are equivalent). However, there are 
 several ways to pass arguments to functions in mojo. An argument to a function can be:
 
-- **moved**: where the ownership and _value_ of the variable is transferred to the function
+- **moved**: where the ownership and _value_ of the argument is transferred to the function
     - The type of the parameter must have a `__moveinit__` method defined
     - In the fn declaration, the parameter name will be prefixed with `owned` keyword
     - On the caller side, the argument is postfixed with the `^` symbol (eg `foo(age^)`)
