@@ -91,12 +91,21 @@ let obj2 = obj  # will fail here, because this would be a copy and there is no _
 
 After an assignment, the variable on the right hand side (RHS) is still available.  This is like a rust type that 
 implements the `Copy` trait.  If a rust type does not implement the `Copy` trait, then the variable RHS would have been
-_moved_ into the variable on the left hand side (LHS).  But what exactly is moved?
+_moved_ into the variable on the left hand side (LHS).  
+
+In rust, you don't have a choice whether a move will happen or not.  So this begs a couple of questions:
+
+- What happens if you have neither a `__copyinit__` or `__moveinit__` defined?
+- Why wouldn't you want a `__moveinit__` (or `__copyinit__`) defined?
+- What exactly is moved?
+
+To answer the questions above, we need to consider what a variable _really_ is.
 
 ### A variable's multiple identities
 
-This is not specific mojo, but is required understanding nevertheless.  This knowledge will help in understanding how
-and why copy and move constructors may or may not be needed.
+This is not specific to mojo, but is required understanding nevertheless.  This knowledge will help in understanding how
+and why copy and move constructors may or may not be needed in low-level system's programming languages such as mojo, 
+rust, or C++.
 
 Typically, in high level languages, when we think of a variable, we only think about the data that it represents.  The
 variable **is** the data is how we tend to think of it.  But sometimes, this way of thinking gets us in trouble.  A 
