@@ -17,10 +17,11 @@ By default, all parameters are immutable and passed by reference (an implicit ke
 However, there are several ways to pass arguments to functions in mojo. An argument to a function can be:
 
 - **moved**: where the ownership and _value_ of the variable is transferred to the function
-    - The parameter type must have a `__moveinit__` method defined
+    - The type of the parameter must have a `__moveinit__` method defined
     - In the fn declaration, the parameter name will be prefixed with `owned` keyword
     - On the caller side, the argument is postfixed with the `^` symbol (eg `foo(age^)`)
     - Once moved, the original variable is no longer accessible (technically, it could be zeroed out but cant be reached)
+    - _moves_ also happen in assignment, when the RHS variable is post-fixed with the `^` sigil (`let obj2 = obj1^`)
 - **by reference (immutably)**: where a shared reference to the argument object is passed in 
     - This is the default, and an implicit `borrowed` keyword is prefixed before the parameter name
     - No mutation of the argument can occur
@@ -67,7 +68,7 @@ let new_obj = foo_by_mut_ref(obj)  # obj still exists and was mutated
 # For this assignment to work, MyStruct must implement __copyinit__
 ```
 
-## Copy vs Move
+## Copy vs Move vs Reference
 
 Unlike rust, mojo allows you to make types moveable or not (in rust, the affine type system requires all types to
 transfer the data and then effectively delete the old value, placing a lot of stress on memcpy performance).  In rust,
@@ -101,6 +102,66 @@ In rust, you don't have a choice whether a move will happen or not.  So this beg
 
 To answer the questions above, we need to consider what a variable _really_ is.
 
+The value stored at the memory location of the RHS is copied over to the LHS, and then the memory for the RHS is deleted
+In rust's case, the drop doesn't actually happen until the end of the scope, whereas in mojo it's as soon as the 
+variable is no longer used anymore...even within the same scope.  This has a couple of advantages for mojo compared to 
+rust by eliminating the need for [dynamic drop flags](https://doc.rust-lang.org/nomicon/drop-flags.html).
+
+But what about references?  Currently, mojo doesn't have explicit references.  They do have `ref` and `mut ref` as
+reserved keywords, but they are still working on fleshing out their lifetime system.  That being said, whenever you pass
+a variable into a function, by default, it's being passed in as an immutable reference (the data is neither being copied
+nor moved into the function).  Unless a parameter is marked with `inout`, so that it is a mutable reference, or with the
+`owned` prefix, so that the variable itself is moved, the argument is passed in by immutable reference.
+
+The reason mojo choose this as the default, is that they believe this is the more common scenario, and it (somewhat)
+dovetails with how pythonistas program.  Since everything is an object (lives on the heap) in python, everything in 
+python is passed by reference.  Whether it is a mutable or immutable reference depends on the type in python.
+
+In rust, it defaults to move semantics, and therefore pass by value.
+
+### Why does it matter?
+
+First off ask yourself
+
+- Why do we even need to make the distinction between copy and move?  
+- Wouldn't it just be easier to always copy data?
+- Or conversely, always directly update the value itself instead of making copies?
+- And why a move if we can just copy? What good does transferring data do?
+
+Some of the answers to those questions requires an understanding of memory, and the performance characteristics of
+accessing the values stored in memory.  If copies were cheap, then it probably would make sense to always make a copy,
+unless your goal was to make the change visible somewhere else (ie, in another thread). But copying is not always cheap.
+
+What about _moves_?  Rust makes it central to the language, because its affine type system requires it.  So it must be
+better than copying right?  Moving data has benefits to compiler analysis, because it means the other variable no longer
+exists.  The affine type system guarantees that a variable is used _at most once_ (related to _linear type system_ which
+guarantees that a type will be used _exactly once_).  In order to be used more than once (used, meaning passed to a
+function, or assignments), requires a reference to the variable, and not the variable itself.
+
+However, moves, like copy, will sometimes require transfer of data from one memory location to another and will always
+require (at some point) calling the memory destructor to free up the memory of the old (now moved) data. For stack
+allocated data, memory clean up is cheap (basically, just moving the register base and stack pointers), but not for heap
+allocated data. Any time data is transferred, it triggers a cascade of operating system syscalls and hardware events
+that cost time.
+
+The old mantra was that developer time was more costly than compute time, which is why dynamic but slow languages like
+perl, python, and javascript took off.  But many domains are starting to feel the pinch of performance.  Especially in
+Big Data realms, where Garbage Collector pauses, OOM issues, and long compute instance hours has become a big concern.
+With the growth of Big Data, especially with regards to Machine Learning growing 10x every 18 months (recall Moore's Law
+was just 2x every 18 months), clearly, something is intractable.
+
+This was why mojo was invented; to reap as much unused power from hardware accelerators as possible.  By hardware
+accelerator, this isn't just GPUs or TPUs, but unused specialized SIMD registers in vanilla CPUs.  The growth of compute
+costs to train ML models has become unsustainable (even with hardware accelerators, so mojo is only going to help with
+the problem, not solve it).  
+
+If you think "yeah but I don't work with ML or Big Data, so my developer productivity is more important".  Well, for
+starters, ML training and inference is so compute intensive, that it's becoming harder to find compute nodes that are
+relatively beefy.  Secondly, AI is starting to change how we code, from intellisense using inference to predict possible
+solutions to your code, to vulnerability detection, and even just assisting us in learning how to do something.  And
+lastly, we should think about the energy costs it takes to run our programs, just as much as we think about fuel
+efficiency of our cars (if you're still using internal combustion engines).
+
 ### A variable's multiple identities
 
 This is not specific to mojo, but is required understanding nevertheless.  This knowledge will help in understanding how
@@ -113,16 +174,39 @@ variable is really: a name, which points to some memory, and that memory holds s
 
 So, let's break up that statement into its discrete parts:
 
-- `a name`:  this is the symbol that is used to (ultimately) give access to data
-- `which points to some memory`: most languages actually have some kind of mapping of the name to a memory location
-    - these are usually called namespaces, and namespaces are often created at each scoping level
-    - in python, there are several scopes, the one tripping people up the most being the function scope
-    - there are actually several regions of memory
-        - registers: which are in the CPU itself
-        - cache: with different levels, if 
+- `a name`:  this is the symbol that is used to (ultimately) give access to data depending on the scope
+    - The name must first be looked up, because there may be the same name in different scopes
+    - In python there are 4 different kinds of scopes (soon to be 5 in 3.12)
+    - The namespace is like a dictionary that makes the symbol name, to the object (really, it's memory)
+    - Python has some rules about how to look up the name in the nested namespaces (so mojo should too)
+- `which points to some memory`: there are actually several regions of memory
+    - registers: which are in the CPU itself
+    - cache: with different levels, if latency access
+    - stack: a region in memory (typically high address range)
+        - Since the stack is frequently accessed, it is often in the cache
+        - Due to the way cache lines work, when memory is contiguous, it will also pull in "nearby" data into the cache
+            - Therefore, variables in the same stack frame often get pulled into the cache as well
+    - heap: a region in memory (typically low address range)
+        - One reason arrays are faster than maps/dicts is because the data is contiguous.  
+        - This has the benefit that data nearby data is pulled into cache
+        - With maps or most data structures with pointers, the pointers to fields/values may be "far away"
+    - understanding performance with memory is difficult, because it requires some understanding of:
+        - physical vs virtual memory (and cache -> cache lookup -> TLB lookup -> memory or paging)
+        - TLB: Translation Lookaside Buffer, which is a hardware cache of virtual -> physical addressing
+        - Page Tables: a Page is a data structure the OS uses to know what has been mapped to physical memory
+            - and contains a _dirty_ bit (a block has been modified and saving to disk, and cache needs updating)
+        - Cache Lines: the smallest amount of data that can be read/written to cache
+        - Cache miss: when the CPU has to fetch data from main memory (and written to cache depending on strategy)
+        - TLB miss: is when data isn't in the memory and has to be fetched from disk
 - `that memory holds some value`: the term value is tricky, because the value stored in memory may also be a reference
-    - in python, _everything_ is a reference to data, not the data itself
+    - in python, _everything_ is a an object, including things like int and float
+        - Memory has an address and it is the starting location for how the interpreter (or compiler in mojo's case)
+          interprets the bits
+            - This is why in system languages like rust and mojo, we must know the _size_ of the data type
+            - Given the size of a data type, and its starting memory address, we can interpret the bits into a type
         - there is no pass by value, however there are immutable data types like int or str that seem that way
+        - This is why when you pass most objects in python to a function, any modification is seen after the function
+            - With immutable data types, like int, str, or tuple, a _new_ object
     - in mojo, the memory storing a variable's value might be:
         - the actual data on the stack
         - a pointer referencing another address in memory (whose value could hold another indirection recursively)
