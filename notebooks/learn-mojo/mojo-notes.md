@@ -13,8 +13,19 @@ In rust, `let` and `let mut` would be the equivalent identifiers.
 
 ## Argument passing
 
-By default, all parameters are immutable and passed by reference (an implicit keyword `borrowed` is added as a prefix).
-However, there are several ways to pass arguments to functions in mojo. An argument to a function can be:
+Some programmers may not even understand what _argument passing_ means.  Some languages have only one way to do it, like
+python, or have something awkward like java (which differentiates between Objects and primitives) which will do Boxing 
+and Unboxing (which will be a performance hit) and may not make it obvious that there are different ways to pass args
+to functions.
+
+So if you are not familiar with the terms, there are generally two different kinds of argument passing:
+
+- by value: where the value of a variable is used
+- by reference: where the value is indirectly retrieved through reference or pointer dereferencing
+
+In mojo, by default, all parameters are immutable and passed by reference (an implicit keyword `borrowed` is added as a 
+prefix to the parameter name so that `foo(borrowed age: Int)` and `foo(age: Int)` are equivalent). However, there are 
+several ways to pass arguments to functions in mojo. An argument to a function can be:
 
 - **moved**: where the ownership and _value_ of the variable is transferred to the function
     - The type of the parameter must have a `__moveinit__` method defined
