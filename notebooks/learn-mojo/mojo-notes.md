@@ -68,7 +68,7 @@ let new_obj = foo_by_mut_ref(obj)  # obj still exists and was mutated
 # For this assignment to work, MyStruct must implement __copyinit__
 ```
 
-## Copy vs Move
+## Copy vs Move vs Reference
 
 Unlike rust, mojo allows you to make types moveable or not (in rust, the affine type system requires all types to
 transfer the data and then effectively delete the old value, placing a lot of stress on memcpy performance).  In rust,
@@ -93,6 +93,62 @@ let obj2 = obj  # will fail here, because this would be a copy and there is no _
 After an assignment, the variable on the right hand side (RHS) is still available.  This is like a rust type that 
 implements the `Copy` trait.  If a rust type does not implement the `Copy` trait, then the variable RHS would have been
 _moved_ into the variable on the left hand side (LHS).  But what exactly is moved?
+
+The value stored at the memory location of the RHS is copied over to the LHS, and then the memory for the RHS is deleted
+In rust's case, the drop doesn't actually happen until the end of the scope, whereas in mojo it's as soon as the 
+variable is no longer used anymore...even within the same scope.  This has a couple of advantages for mojo compared to 
+rust by eliminating the need for [dynamic drop flags](https://doc.rust-lang.org/nomicon/drop-flags.html).
+
+But what about references?  Currently, mojo doesn't have explicit references.  They do have `ref` and `mut ref` as
+reserved keywords, but they are still working on fleshing out their lifetime system.  That being said, whenever you pass
+a variable into a function, by default, it's being passed in as an immutable reference (the data is neither being copied
+nor moved into the function).  Unless a parameter is marked with `inout`, so that it is a mutable reference, or with the
+`owned` prefix, so that the variable itself is moved, the argument is passed in by immutable reference.
+
+The reason mojo choose this as the default, is that they believe this is the more common scenario, and it (somewhat)
+dovetails with how pythonistas program.  Since everything is an object (lives on the heap) in python, everything in 
+python is passed by reference.  Whether it is a mutable or immutable reference depends on the type in python.
+
+In rust, it defaults to move semantics, and therefore pass by value.
+
+### Why does it matter?
+
+First off ask yourself
+
+- Why do we even need to make the distinction between copy and move?  
+- Wouldn't it just be easier to always copy data?
+- Or conversely, always directly update the value itself instead of making copies?
+- And why a move if we can just copy? What good does transferring data do?
+
+Some of the answers to those questions requires an understanding of memory, and the performance characteristics of
+accessing the values stored in memory.  If copies were cheap, then it probably would make sense to always make a copy,
+unless your goal was to make the change visible somewhere else (ie, in another thread). But copying is not always cheap.
+
+What about _moves_?  Rust makes it central to the language, because its affine type system requires it.  So it must be
+better than copying right?  Moving data has benefits to compiler analysis, because it means the other variable no longer
+exists, so we don't have to keep track of its lifetime or possible reference aliasing. But moves, like copy, will
+sometimes require transfer of data from one memory location to another and will always require (at some point) calling
+the memory destructor to free up the memory of the old (now moved) data.  For stack allocated data, memory clean up is
+cheap (basically, just moving the register base and stack pointers), but not for heap allocated data. Any time data is
+transferred, it triggers a cascade of operating system syscalls and hardware events that cost time.
+
+The old mantra was that developer time was more costly than compute time, which is why dynamic but slow languages like
+perl, python, and javascript took off.  But many domains are starting to feel the pinch of performance.  Especially in
+Big Data realms, where Garbage Collector pauses, OOM issues, and long compute instance hours has become a big concern.
+With the growth of Big Data, especially with regards to Machine Learning growing 10x every 18 months (recall Moore's Law
+was just 2x every 18 months), clearly, something is intractable.
+
+This was why mojo was invented; to reap as much unused power from hardware accelerators as possible.  By hardware
+accelerator, this isn't just GPUs or TPUs, but unused specialized SIMD registers in vanilla CPUs.  The growth of compute
+costs to train ML models has become unsustainable (even with hardware accelerators, so mojo is only going to help with
+the problem, not solve it).  
+
+If you think "yeah but I don't work with ML or Big Data, so my developer productivity is more important".  Well, for
+starters, ML training and inference is so compute intensive, that it's becoming harder to find compute nodes that are
+relatively beefy.  Secondly, AI is starting to change how we code, from intellisense using inference to predict possible
+solutions to your code, to vulnerability detection, and even just assisting us in learning how to do something.  And
+lastly, we should think about the energy costs it takes to run our programs, just as much as we think about fuel
+efficiency of our cars (if you're still using internal combustion engines).
 
 ### A variable's multiple identities
 
