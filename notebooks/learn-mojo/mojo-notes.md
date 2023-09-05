@@ -189,27 +189,7 @@ data can't be read either as a bug or an exploit which can happen if the process
 by shifting the stack and base registers to point to the next stack frame), but not for heap allocated data. Any time 
 data is transferred, it triggers a cascade of operating system syscalls and hardware events that cost time.
 
-python, took off.  But many domains are starting to feel the pinch of performance.  Especially in Big Data realms, where
-> **Developer Productivity vs Compute Efficiency**
->
-> The old mantra was that developer time was more costly than compute time, which is why dynamic but slow languages like
-> python, took off.  But many domains are starting to feel the pinch of performance.  Especially in Big Data realms,
-> where Garbage Collector pauses, OOM issues, and long compute instance hours has become a big concern. With the growth
-> of Big Data, especially with regards to [Machine Learning growing 10x every 18
-> months](https://thenewstack.io/how-ray-a-distributed-ai-framework-helps-power-chatgpt/) (recall Moore's Law was just
-> 2x every 18 months), clearly, something is intractable.
-
-This was why mojo was invented; to reap as much unused power from hardware accelerators as possible.  By hardware
-accelerator, this isn't just GPUs or TPUs, but unused specialized SIMD registers in vanilla CPUs.  The growth of compute
-costs to train ML models has become unsustainable (even with hardware accelerators, so mojo is only going to help with
-the problem, not solve it).  
-
-If you think "yeah but I don't work with ML or Big Data, so my developer productivity is more important".  Well, for
-starters, ML training and inference is so compute intensive, that it's becoming harder to find compute nodes that are
-relatively beefy.  Secondly, AI is starting to change how we code, from intellisense using inference to predict possible
-solutions to your code, to vulnerability detection, and even just assisting us in learning how to do something.  And
-lastly, we should think about the energy costs it takes to run our programs, just as much as we think about fuel
-efficiency of our cars (if you're still using internal combustion engines).
+So let's dive in, and consider what a variable really is under the hood.
 
 ### A variable's multiple identities
 
