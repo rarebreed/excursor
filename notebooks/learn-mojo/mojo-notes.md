@@ -18,8 +18,8 @@ In rust, `let` and `let mut` would be the equivalent identifiers.
 
 Some programmers may not even understand what _argument passing_ means.  Some languages have only one way to do it, like
 python.  Or it may have something awkward like java (which differentiates between Objects and primitives) which will do
-Boxing and Unboxing causing a performance hit, and makes it not obvious that there are different ways to pass args to
-functions.
+Boxing and Unboxing that causes a performance hit.  And since (Un)Boxing is implicit, it is not obvious that there are
+different ways to pass args to java methods.
 
 So if you are not familiar with the terms, there are generally two different kinds of argument passing:
 
