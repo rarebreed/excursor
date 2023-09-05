@@ -2,7 +2,7 @@
 from abc import ABC, abstractmethod
 import asyncio
 from dataclasses import dataclass
-from typing import Awaitable, Callable, Coroutine, Generic, Iterable, Self, TypeAlias, TypeVar
+from typing import Callable, Coroutine, Generic, Iterable, Self, TypeAlias, TypeVar
 
 
 T = TypeVar("T")
@@ -46,7 +46,7 @@ class Maybe(Generic[T], Functor[T]):
                         return Maybe(inner=None)
                     case _:
                         return result
-                    
+
     def map_async(self, fn: Callable[[T], Coroutine[None, None, R]]) -> "Maybe[R]":
         match self.inner:
             case None:
@@ -59,7 +59,7 @@ class Maybe(Generic[T], Functor[T]):
                         return Maybe(None)
                     case res:
                         return Maybe(inner=res)
-                    
+
     def flat_map_async(self, fn: Callable[[T], Coroutine[None, None, "Maybe[R]"]]) -> "Maybe[R]":
         """"""
         match self.inner:
@@ -83,6 +83,7 @@ class Maybe(Generic[T], Functor[T]):
             case arg:
                 self.inner = fn(arg)
                 return self
+
 
 @dataclass
 class Iter(Generic[T], Functor[T]):

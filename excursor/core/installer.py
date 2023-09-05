@@ -187,7 +187,7 @@ class PythonDevel:
         await sh()
         print(f"shell is {sh.output}")
         return sh.output.strip().split("/")[-1]
-    
+
     async def which(self, prog: str) -> tuple[str, int | None]:
         runner, proc = await Run(f"which {prog}").run(throw=False)
         return runner.output, proc.returncode
