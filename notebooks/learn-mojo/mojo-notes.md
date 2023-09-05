@@ -27,7 +27,7 @@ So if you are not familiar with the terms, there are generally two different kin
 - by reference: where the value is indirectly retrieved through reference or pointer dereferencing
 
 This is sometimes confusing to people, because pointers or references can be hard to conceptualize.  If it helps, think
-about _value equality_ versus _identity equality_ which is what Java does.  By default, in java, the `equals` method
+about _value equality_ versus _identity equality_ which is what Java does.  By default, in java, the `==` operator
 compares _identity equality_, meaning "does this variable point to the same memory as this other variable?".  But 95% of
 the time what we care about is _value equality_, or "does this variable have the same contents of this other variable?".
 
