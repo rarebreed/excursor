@@ -1,10 +1,63 @@
 # Mojo notes
 
-These notes will be in md format until the mojo SDK is released in September
+These notes will be in md format until the mojo SDK is released in September.
 
-## Mutability: let and var
+This document is currently written for readers who already have experience with a programming language, so it will not
+start from first principles.  There will be frequent references to rust, but it is not required to know rust.
 
-In mojo fn's, you must declare local variables either with `let` or `var`.
+There will also be frequent comparisons to python, since mojo aims to be a superset of python.  Therefore, ideally, you
+should know python as well.  However, this is also not strictly necessary, and overtime, I will write the document to
+teach both python and mojo basics as mojo gains more compatibility with python.
+
+## Some limitations to note in mojo
+
+While mojo aims to be a superset of python, it is not yet there.  Some current limitations are the following:
+
+- No top-level variables (ie, variables that don't live inside a function or struct)
+- No python `class` type (but it does have `struct` which is the non-dynamic version of a class)
+- The SDK to run locally wont be available until some time in September
+- Packaging is still TBD
+
+## Functions in Mojo
+
+The bread and butter of almost all languages (java being a lonely outlier) are functions, and mojo is no exception.  In mojo,
+there are two ways to define a function:
+
+- like python with `def`
+- or with `fn`
+
+> **Parameter vs Argument**
+> 
+> Many languages treat parameters and arguments as synonyms, but mojo has a more precise definition.  A parameter is what is in
+> the declaration of the function and is therefore compile time.  An argument is the runtime type/value that gets passed into
+> the function when it is called, and is therefore known at runtime.  This dovetails nicely with mojo's Parameterized Expressions
+> which are like generics and functions that can run at compile time.
+
+If using a `def` definition, type annotations for are not required (though still recommended) for a function's parameters.  If 
+using a `fn` definition, then the type annotations are required.
+
+Mojo uses a slightly modified version of the PEP-695 syntax (forthcoming in python 3.12 due out in early October 2023).  Unlike
+python type annotations where the return type can be inferred, in mojo, you must still specify the return type if using `fn` 
+definition.
+
+> **Async**: Mojo also has support for `async fn` and `async def` as well, along with the `await` keyword.
+
+Here is an example of a simple mojo function
+
+```python
+fn my_relu(x: Int, threshold y: Int = 10) -> Int:
+    let result: Int
+    if x >= y:
+        result = x * 2
+    else:
+        result = x
+    return result
+```
+
+
+### Mutability: let and var
+
+In mojo fn's or struct fields, you must declare local variables either with `let` or `var`.
 
 - `let` is for immutable variables
 - `var` is for mutable variables
@@ -77,7 +130,7 @@ however consider this, and may reintroduce it depending on how their lifetime sy
 
 When you do want to pass by value and _move_ it, then you do this in mojo
 
-```
+```python
 # For the following code to work, MyStruct must implement __moveinit__
 
 fn foo(owned data: MyStruct):
@@ -97,7 +150,7 @@ let obj3 = obj2^
 
 When you want to pass by _mutable_ reference in mojo, you would use the `inout` keyword modifer to a parameter
 
-```
+```python
 def foo_by_mut_ref(inout data: MyStruct):
     data.value = 10
 
@@ -115,7 +168,7 @@ or cloneable (deep...for copying ref data).
 In mojo, copying is done manually by implementing a `__copyinit__` dunder method.  It is optional, but without an
 implementation, you can not put the type on the right hand side of an assignment.  Eg
 
-```
+```python
 # A type without a copy or move constructor
 struct Foo:
     age: Int
