@@ -114,7 +114,7 @@ several ways to pass arguments to functions in mojo. An argument to a function c
 > There is some discussion on whether to rename some keywords. Notably `borrowed` may become `ref` and `inout` might
 > become `refmut`.  This is due to some changes they may need to make for `lifetimes`.  Also, they will probably change
 > they keywords to _modify the type_ rather than modify the parameter _name_.  For example:
-> ```
+> ```python
 > # Current way
 > fm modify_employee(inout employee: Employee): ...
 > # Proposed way
@@ -171,7 +171,7 @@ implementation, you can not put the type on the right hand side of an assignment
 ```python
 # A type without a copy or move constructor
 struct Foo:
-    age: Int
+    let age: Int
 
     def __init__(inout self, age: Int):
         self.age = age
