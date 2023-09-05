@@ -11,12 +11,15 @@ In mojo fn's, you must declare local variables either with `let` or `var`.
 
 In rust, `let` and `let mut` would be the equivalent identifiers.
 
+> **Mojo Update**
+> According to the mojo proposals for keyword renaming, the `let` may be renamed, and `var` might serve double duty
+
 ## Argument passing
 
 Some programmers may not even understand what _argument passing_ means.  Some languages have only one way to do it, like
-python, or have something awkward like java (which differentiates between Objects and primitives) which will do Boxing 
-and Unboxing (which will be a performance hit) and may not make it obvious that there are different ways to pass args
-to functions.
+python.  Or it may have something awkward like java (which differentiates between Objects and primitives) which will do
+Boxing and Unboxing causing a performance hit, and makes it not obvious that there are different ways to pass args to
+functions.
 
 So if you are not familiar with the terms, there are generally two different kinds of argument passing:
 
@@ -54,28 +57,41 @@ several ways to pass arguments to functions in mojo. An argument to a function c
     - Since it is a mutable reference, only one such mutable (aka exclusive) reference can exist in the lifetime of the
       use of the function
 
-Note that this is opposite to rust.  In rust, the default is to pass by value and to _move_ it (the data is transferred
-and then once out of scope is gone).  Mojo takes the stand that it is more common to want to pass by (immutable)
-reference and makes this the default.  This is also more similar to how python works, although most things in python are
-a mutable pass by reference (eg, lists, dicts, and most classes). You therefore do not need to mark the argument with a
-sigil (like `&foo`) that rust requires when you _do_ want to pass by immutable reference (they did however consider
-this, and may reintroduce it depending on how their lifetime system works).
+> **Mojo Update**
+> There is some discussion on whether to rename some keywords. Notably `borrowed` may become `ref` and `inout` might
+> become `refmut`.  This is due to some changes they may need to make for `lifetimes`.  Also, they will probably change
+> they keywords to _modify the type_ rather than modify the parameter _name_.  For example:
+> ```
+> # Current way
+> fm modify_employee(inout employee: Employee): ...
+> # Proposed way
+> fn modify_employee(employee: refmut Employee): ...
+> ```
+
+Note that the default behavior is opposite to rust.  In rust, the default is to pass by value and to _move_ it (the data
+is transferred and then once out of scope is gone).  Mojo takes the stand that it is more common to want to pass by
+(immutable) reference and makes this the default.  This is also more similar to how python works, although most things
+in python are a mutable pass by reference (eg, lists, dicts, and most classes). You therefore do not need to mark the
+argument with a sigil (like `&foo`) that rust requires when you _do_ want to pass by immutable reference (they did
+however consider this, and may reintroduce it depending on how their lifetime system works).
 
 When you do want to pass by value and _move_ it, then you do this in mojo
 
 ```
+# For the following code to work, MyStruct must implement __moveinit__
+
 fn foo(owned data: MyStruct):
-    ...
     # do something with data
+    ...
 
 let obj = MyStruct()
 foo(obj^)  # think of the ^ like it's being given up
 print(obj) # will fail, because obj was moved
 
-# Or not in a function but in assignment
+# Or in assignment
 let obj2 = MyStruct()
-# For the next line of code to work, MyStruct must implement __moveinit__
-# after this, obj2 is no longer accessible.  Without the ^, it would be a _copy_ and not a _move_
+# after this, obj2 is no longer accessible.  
+# Without the ^, it would be a _copy_ and not a _move_ (and MyStruct would have to implement __copyinit__)
 let obj3 = obj2^  
 ```
 
@@ -111,15 +127,19 @@ obj = Foo(10)
 let obj2 = obj  # will fail here, because this would be a copy and there is no __copyinit__ implememted
 ```
 
-After an assignment, the variable on the right hand side (RHS) is still available.  This is like a rust type that 
-implements the `Copy` trait.  If a rust type does not implement the `Copy` trait, then the variable RHS would have been
-_moved_ into the variable on the left hand side (LHS).  
+> **Note**: I will use the acronym RHS for right hand side, and LHS for left hand side 
 
-In rust, you don't have a choice whether a move will happen or not.  So this begs a couple of questions:
+After an assignment, the variable on the RHS is still available.  This is like a rust type that implements the `Copy`
+trait.  If a rust type does not implement the `Copy` trait, then the variable RHS would have been _moved_ into the
+variable on the LHS.  
 
-- What happens if you have neither a `__copyinit__` or `__moveinit__` defined?
-- Why wouldn't you want a `__moveinit__` (or `__copyinit__`) defined?
-- What exactly is moved?
+> **Food for thought**
+>
+> In rust, you don't have a choice whether a move will happen or not.  So this begs a couple of questions:
+>
+> - What happens if you have neither a `__copyinit__` or `__moveinit__` defined?
+> - Why wouldn't you want a `__moveinit__` (or `__copyinit__`) defined?
+> - What exactly is moved?
 
 To answer the questions above, we need to consider what a variable _really_ is.  We will cover this in a later section.
 
@@ -134,9 +154,11 @@ a variable into a function, by default, it's being passed in as an immutable ref
 nor moved into the function).  Unless a parameter is marked with `inout`, so that it is a mutable reference, or with the
 `owned` prefix, so that the variable itself is moved, the argument is passed in by immutable reference.
 
-The reason mojo choose this as the default, is that they believe this is the more common scenario, and it (somewhat)
-dovetails with how pythonistas program.  Since everything is an object (lives on the heap) in python, everything in 
-python is passed by reference.  Whether it is a mutable or immutable reference depends on the type in python.
+> **But Why?**
+>
+> The reason mojo choose this as the default, is that they believe this is the more common scenario, and it (somewhat)
+> dovetails with how pythonistas program.  Since everything is an object (lives on the heap) in python, everything in 
+> python is passed by reference.  Whether it is a mutable or immutable reference depends on the type in python.
 
 In rust, it defaults to move semantics, and therefore pass by value.
 
@@ -167,11 +189,15 @@ data can't be read either as a bug or an exploit which can happen if the process
 by shifting the stack and base registers to point to the next stack frame), but not for heap allocated data. Any time 
 data is transferred, it triggers a cascade of operating system syscalls and hardware events that cost time.
 
-The old mantra was that developer time was more costly than compute time, which is why dynamic but slow languages like
-perl, python, and javascript took off.  But many domains are starting to feel the pinch of performance.  Especially in
-Big Data realms, where Garbage Collector pauses, OOM issues, and long compute instance hours has become a big concern.
-With the growth of Big Data, especially with regards to [Machine Learning growing 10x every 18 months](https://thenewstack.io/how-ray-a-distributed-ai-framework-helps-power-chatgpt/) 
-(recall Moore's Law was just 2x every 18 months), clearly, something is intractable.
+python, took off.  But many domains are starting to feel the pinch of performance.  Especially in Big Data realms, where
+> **Developer Productivity vs Compute Efficiency**
+>
+> The old mantra was that developer time was more costly than compute time, which is why dynamic but slow languages like
+> python, took off.  But many domains are starting to feel the pinch of performance.  Especially in Big Data realms,
+> where Garbage Collector pauses, OOM issues, and long compute instance hours has become a big concern. With the growth
+> of Big Data, especially with regards to [Machine Learning growing 10x every 18
+> months](https://thenewstack.io/how-ray-a-distributed-ai-framework-helps-power-chatgpt/) (recall Moore's Law was just
+> 2x every 18 months), clearly, something is intractable.
 
 This was why mojo was invented; to reap as much unused power from hardware accelerators as possible.  By hardware
 accelerator, this isn't just GPUs or TPUs, but unused specialized SIMD registers in vanilla CPUs.  The growth of compute
@@ -206,15 +232,18 @@ So, let's break up that statement into its discrete parts:
     - The namespace is like a dictionary that maps the symbol name, to the object (really, its memory)
     - Python has some rules about how to look up the name in the nested namespaces (so mojo should too)
 - `which points to some memory`: there are actually several regions of memory
-    - registers: which are in the CPU itself
-    - cache: with different levels of latency access
+    - **registers**: which are in the CPU itself
+    - **cache**: multiple levels of cache with different latency access
         - cache line: the minimum amount of memory that can be read from or written to the cache
-    - stack: a region in memory (typically high address range depending on OS and CPU arch)
+        - cache tag: a subset of the _physical memory_ address used as a lookup (including index, offset, and set)
+        - write policy: the policy of when to write data back to memory in a cache miss (see cache coherency)
+        - cache coherency: a problem that occurs when cache and 
+    - **stack**: a region in memory (typically high address range depending on OS and CPU arch)
         - Since the stack is frequently accessed, it is often in the cache
         - Due to the way cache lines work, when memory is contiguous, it will also pull in "nearby" data into the cache
             - Therefore, variables in the same stack frame often get pulled into the cache as well
         - The stack grows down (when it starts at a high address)
-    - heap: a region in memory (typically low address range)
+    - **heap**: a region in memory (typically low address range)
         - One reason arrays are faster than maps/dicts is because the data is contiguous.  
         - This has the benefit that data nearby data is pulled into cache
         - With maps or most data structures with pointers, the pointers to fields/values may be "far away"
