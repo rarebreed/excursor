@@ -6,6 +6,7 @@ import asyncio
 from asyncio.subprocess import Process
 from dataclasses import dataclass, field
 import os
+from os import _Environ
 from pathlib import Path
 from subprocess import PIPE
 from typing import IO, Any, Literal
@@ -24,7 +25,7 @@ class Run:
     text: bool | None = None
     sudo: bool = False
     output: str = ""
-    env: dict[str] | None = field(repr=False, default=None)
+    env: _Environ[str] | None = field(repr=False, default=None)
 
     def __post_init__(self):
         if self.cmd.startswith("sudo") and not self.sudo:
@@ -90,7 +91,7 @@ class Run:
 
     async def _read_stream(self, proc: Process, stream: Literal["stdout", "stderr"]):
         std_stream = proc.stdout if stream == "stdout" else proc.stderr
-        while not std_stream.at_eof():
+        while std_stream is not None and not std_stream.at_eof():
             out = await std_stream.readline()
             out = out.decode()
             self.output += out
@@ -101,11 +102,16 @@ class Run:
         match [self.sudo, pw]:
             case [True, str()]:
                 while True:
+                    if proc.stderr is None:
+                        break
                     line = await proc.stderr.readuntil(b": ")
                     line = line.decode()
 
                     if self.sudo and line.startswith("[sudo]"):
                         print(line)
+                    if proc.stdin is None:
+                        raise Exception("no stdin on child process")
+                    else:
                         proc.stdin.write(f"{pw}\n".encode())
                         break
             case [True, None]:

@@ -76,7 +76,7 @@ class Installer(ABC):
         flags: str | list[str] | None = None,
         **extras
     ) -> tuple[Run, Process]:
-        extra_args = self.extras(flags, extras)
+        extra_args = self.extras(flags, **extras)
         uninstall = f"{'sudo' if pw else ''}{self.manager} {self.uninstall_cmd} {extra_args} {' '.join(pkgs)}"
         run = Run(cmd=uninstall, args=[])
         proc = await run(pw=pw)
@@ -91,7 +91,7 @@ class Installer(ABC):
         flags: str | list[str] | None = None,
         **extras
     ) -> tuple[Run, Process]:
-        extra_args = self.extras(flags, extras)
+        extra_args = self.extras(flags, **extras)
         install = f"{'sudo' if pw else ''}{self.manager} {self.update_cmd} {extra_args} {' '.join(pkgs)}"
         run = Run(cmd=install, args=[])
         proc = await run(pw=pw)
@@ -159,8 +159,9 @@ class PythonDevel:
     - pyproject template
     """
     pw: str | None = None
-    sys_installer: Installer = field(init=False)
+    sys_installer: SysInstaller = field(init=False)
     devel_libs: list[str] = field(init=False)
+    local_bin_path: bool = False
 
     def __post_init__(self):
         self.sys_installer = SysInstaller()
@@ -186,6 +187,10 @@ class PythonDevel:
         await sh()
         print(f"shell is {sh.output}")
         return sh.output.strip().split("/")[-1]
+    
+    async def which(self, prog: str) -> tuple[str, int | None]:
+        runner, proc = await Run(f"which {prog}").run(throw=False)
+        return runner.output, proc.returncode
 
     async def _install_sysdeps(self):
         """Install system deps"""
@@ -246,14 +251,14 @@ class PythonDevel:
     async def _install_poetry(self):
         # Make sure that we set python in our shell
 
-        Run("curl -sSL https://install.python-poetry.org | python3 -").run()
+        await Run("curl -sSL https://install.python-poetry.org | python3 -").run()
 
     async def _create_venv(self, name="venv"):
         # Install pipx
 
-        await Run(f"python3 -m venv {name}")
+        await Run(f"python3 -m venv {name}").run()
 
-    async def _create_project(self, name: str, packages: list[PyProjectPkgs]):
+    async def _create_project(self, name: str, packages: dict[str, list[str]] = PyProjectPkgs):
         project_path = Path(name)
         if not project_path.exists():
             await Run(f"poetry new {name}").run()
