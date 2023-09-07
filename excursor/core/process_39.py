@@ -6,7 +6,10 @@ from asyncio.subprocess import Process
 from dataclasses import dataclass, field
 from pathlib import Path
 from subprocess import PIPE
+import time
 from typing import IO, Any
+
+from excursor.func import Maybe
 
 
 @dataclass
@@ -84,8 +87,14 @@ class Run:
         # Read the lines in stderr
         if self.sudo and type(pw) == "str":
             while True:
+                if proc.stderr is None:
+                    time.sleep(1)
+                    continue
                 line = await proc.stderr.readuntil(b": ")
                 line = line.decode()
+
+                if proc.stdin is None:
+                    break
 
                 if self.sudo and line.startswith("[sudo]"):
                     print(line)
@@ -97,30 +106,29 @@ class Run:
             ...
 
         while True:
-            out = await proc.stdout.readline()
-            out = out.decode()
-            self.output += out
-            print(out, end="")
+            m_stdout = Maybe(inner=proc.stdout)
+            m_stderr = Maybe(inner=proc.stderr)
+            out = (m_stdout
+                   .map_async(lambda o: o.readline())
+                   .map(lambda b: b.decode()))
+            if out.inner is not None:
+                self.output += out.inner
+                print(out, end="")
 
-            err = await proc.stderr.readline()
-            err = err.decode()
-            self.output += err
-            print(err, end="")
+            err = (m_stderr
+                   .map_async(lambda o: o.readline())
+                   .map(lambda b: b.decode()))
+            if err.inner is not None:
+                self.output += err.inner
+                print(err, end="")
 
-            if proc.stdout.at_eof():
+            if proc.stdout is not None and proc.stdout.at_eof():
                 break
 
         return proc
 
 
 if __name__ == "__main__":
-    async def run1():
-        runner1 = Run("iostat", ["2", "2"])
-        await runner1.launch()
-
-    async def run2():
-        runner2 = Run("echo 'hi sean' > hi.text", shell=True)
-        await runner2.launch()
 
     async def main():
         run = Run(cmd="ls", args=["-al", "/usr/local"], shell=True)
@@ -130,12 +138,10 @@ if __name__ == "__main__":
 
         # Run all the subprocesses concurrently
         multi = await asyncio.gather(
-            run2(),
             run(),
-            run1(),
         )
         # note, we don't have to return multi
-        print(multi[2])
+        print(multi[0])
     # asyncio.run(main())
 
     run = Run(cmd="sudo dnf", args=["update", "-y"])
