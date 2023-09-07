@@ -184,13 +184,18 @@ let obj2 = obj  # will fail here, because this would be a copy and there is no _
 
 > **Note**: I will use the acronym RHS for right hand side, and LHS for left hand side 
 
-After an assignment, the variable on the RHS is still available.  This is like a rust type that implements the `Copy`
-trait.  If a rust type does not implement the `Copy` trait, then the variable RHS would have been _moved_ into the
-variable on the LHS.  
+After an assignment where the RHS type implements `__copyinit__`, the variable on the RHS is still available.  This is
+like a rust type that implements the `Copy` trait.  If a rust type does not implement the `Copy` trait, then the 
+variable RHS would have been _moved_ into the variable on the LHS.
+
+I try to analogize that `__copyinit__` and `__moveinit__` are like the unix `cp` and `mv` commands respectively.
+With the `cp` command, the original source file will still exist after being called, whereas in the `mv` command,
+the source file will no longer exist.
 
 > **Food for thought**
 >
-> In rust, you don't have a choice whether a move will happen or not.  So this begs a couple of questions:
+> In rust, you don't have a choice whether a move will happen or not.  What about mojo? So this begs a couple of
+> questions:
 >
 > - What happens if you have neither a `__copyinit__` or `__moveinit__` defined?
 > - Why wouldn't you want a `__moveinit__` (or `__copyinit__`) defined?
@@ -324,10 +329,13 @@ it actually has the power to directly store a variable into a register through t
 somewhat required (even moreso than rust, because currently, in order to create a list or vector data type in mojo, you
 currently need to roll your own through pointer semantics).
 
-### The Copy Constructor
+### The Copy Constructor: __copyinit__
 
-The copy constructor is needed when you want to copy the _value_ of a variable on the RHS of the `=` sign, to a new
-variable on the LHS.
+Technically, mojo doesn't use the terms copy constructor or move constructor (like C++ does), but it may be helpful to
+think of `__copyinit__` as constructing a "new" value.  I put "new" in quotes, because the implementation of
+`__copyinit__` (that you yourself define in your own structs) might simply increment a ref count and make the 
+new value a reference to an existing value (which is much more performant than allocating a block of memory the size
+of the RHS type, and inserting copies of values into the new memory).
 
 Let's think about vanilla python and look at this code
 
