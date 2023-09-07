@@ -17,6 +17,8 @@ While mojo aims to be a superset of python, it is not yet there.  Some current l
 - No python `class` type (but it does have `struct` which is the non-dynamic version of a class)
 - The SDK to run locally wont be available until some time in September
 - Packaging is still TBD
+- `def` is not fully equivalent to python's def yet (eg, mojo's scope is different)
+- See [proposal on dynamism](https://github.com/modularml/mojo/blob/main/proposals/mojo-and-dynamism.md) for more details on mojo's lack of dynamism
 
 ## Functions in Mojo
 
@@ -33,8 +35,9 @@ there are two ways to define a function:
 > the function when it is called, and is therefore known at runtime.  This dovetails nicely with mojo's Parameterized Expressions
 > which are like generics and functions that can run at compile time.
 
-If using a `def` definition, type annotations for are not required (though still recommended) for a function's parameters.  If 
-using a `fn` definition, then the type annotations are required.
+If using a `def` definition, type annotations for are not required (though still recommended) for a function's parameters or in the
+body of the function.  If using a `fn` definition, then the type annotations are required both for parameters, and for any locally
+declared variables in the body.
 
 Mojo uses a slightly modified version of the PEP-695 syntax (forthcoming in python 3.12 due out in early October 2023).  Unlike
 python type annotations where the return type can be inferred, in mojo, you must still specify the return type if using `fn` 
@@ -54,8 +57,7 @@ fn my_relu(x: Int, threshold y: Int = 10) -> Int:
     return result
 ```
 
-
-### Mutability: let and var
+### Declaring (Im)Mutability: let and var
 
 In mojo fn's or struct fields, you must declare local variables either with `let` or `var`.
 
@@ -227,6 +229,17 @@ First off ask yourself
 Some of the answers to those questions requires an understanding of memory, and the performance characteristics of
 accessing the values stored in memory.  If copies were cheap, then it probably would make sense to always make a copy,
 unless your goal was to make the change visible somewhere else (ie, in another thread). But copying is not always cheap.
+
+> Dynamism's performance cost
+>
+> Part of the reason python is slow is because in python everything is an `object` (somewhat equivalent to Java's Object)
+> and requires:
+> - A memory access to get the object's memory location (which is a glorified hash table)
+> - Retrieval of the value of the key, which is another memory retrieval that may not reside in cache
+> While mojo can go to heroic lengths for parallelism (eg SIMD data types that make use of CPU's vectorized registers),
+> one of the more mundane performance improvements is simply by removing dynamism and specifying types.  For example,
+> In python, a class can have methods and fields dynamically added, removed, or changed at runtime.  The _raison d'etre_
+> of mojo `fn` and `struct` as equivalents of python's `def` and `class` is to remove this dynamism.
 
 What about _moves_?  Rust makes it central to the language, because its affine type system requires it.  So it must be
 better than copying right?  Moving data has benefits to compiler analysis, because it means the other variable no longer
