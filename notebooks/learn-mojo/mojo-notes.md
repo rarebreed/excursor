@@ -15,8 +15,7 @@ While mojo aims to be a superset of python, it is not yet there.  Some current l
 
 - No top-level variables (ie, variables that don't live inside a function or struct)
 - No python `class` type (but it does have `struct` which is the non-dynamic version of a class)
-- The SDK to run locally wont be available until some time in September
-- Packaging is still TBD
+- The SDK to run locally is only available on x86_64 for linux (ubuntu)
 - `def` is not fully equivalent to python's def yet (eg, mojo's scope is different)
 - See [proposal on dynamism](https://github.com/modularml/mojo/blob/main/proposals/mojo-and-dynamism.md) for more details on mojo's lack of dynamism
 
@@ -48,7 +47,7 @@ definition.
 Here is an example of a simple mojo function
 
 ```python
-fn my_relu(x: Int, threshold y: Int = 10) -> Int:
+fn my_relu(x: Int, y: Int = 10) -> Int:
     let result: Int
     if x >= y:
         result = x * 2
