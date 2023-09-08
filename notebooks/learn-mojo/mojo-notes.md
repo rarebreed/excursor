@@ -71,13 +71,13 @@ In rust, `let` and `let mut` would be the equivalent identifiers.
 ## Argument passing
 
 Some programmers may not even understand what _argument passing_ means.  Some languages have only one way to do it, like
-python.  Or it may have something awkward like java (which differentiates between Objects and primitives) which will do
-Boxing and Unboxing that causes a performance hit.  And since (Un)Boxing is implicit, it is not obvious that there are
-different ways to pass args to java methods.
+python.  Or it may have something awkward like java (which differentiates between Objects and primitives) and do
+Boxing and Unboxing when the arguments are primitives, thereby causing a performance hit.  And since (Un)Boxing is 
+implicit, it is not obvious that there are different ways to pass args to java methods.
 
 So if you are not familiar with the terms, there are generally two different kinds of argument passing:
 
-- by value: where the value of a variable is used
+- by value: (sometimes called by-copy) where the value of a variable is used
 - by reference: where the value is indirectly retrieved through reference or pointer dereferencing
 
 This is sometimes confusing to people, because pointers or references can be hard to conceptualize.  If it helps, think
@@ -93,7 +93,7 @@ In mojo, by default, all parameters are immutable and passed by reference (an im
 prefix to the parameter name so that `foo(borrowed age: Int)` and `foo(age: Int)` are equivalent). However, there are 
 several ways to pass arguments to functions in mojo. An argument to a function can be:
 
-- **moved**: where the ownership and _value_ of the argument is transferred to the function
+- **moved**: (aka _transferred_) where the ownership and _value_ of the argument is transferred to the function
     - The type of the parameter must have a `__moveinit__` method defined
     - In the fn declaration, the parameter name will be prefixed with `owned` keyword
     - On the caller side, the argument is postfixed with the `^` symbol (eg `foo(age^)`)
@@ -112,6 +112,7 @@ several ways to pass arguments to functions in mojo. An argument to a function c
       use of the function
 
 > **Mojo Update**
+> >
 > There is some discussion on whether to rename some keywords. Notably `borrowed` may become `ref` and `inout` might
 > become `refmut`.  This is due to some changes they may need to make for `lifetimes`.  Also, they will probably change
 > they keywords to _modify the type_ rather than modify the parameter _name_.  For example:
@@ -334,7 +335,21 @@ Technically, mojo doesn't use the terms copy constructor or move constructor (li
 think of `__copyinit__` as constructing a "new" value.  I put "new" in quotes, because the implementation of
 `__copyinit__` (that you yourself define in your own structs) might simply increment a ref count and make the 
 new value a reference to an existing value (which is much more performant than allocating a block of memory the size
-of the RHS type, and inserting copies of values into the new memory).
+of the RHS type, and inserting copies of values into the new memory).  Or, the implementation could do a value-wise
+deep copy from the RHS object to the LHS
+
+> Rust Copy vs Clone
+>
+> If you are familiar with rust, rust makes a distinction between Copy and Clone (where Clone is a subtype of Copy)
+> In rust, a Copy type is meant for data types that are mainly direct values and don't have any references inside
+> the data type.  This makes them cheap to create new values.  A Clone type is meant for data types that have
+> references, ie, data that lives in the heap.  Creating a clone is therefore more expensive.  Part of the rationale
+> for the difference is that rust _must_ be able to _move_ values in function passing or assignment, and a type
+> implementing the Copy trait determines whether the RHS still exists or after assignment or passed to a function
+> not as a reference (eg `foo(&some_var)`)
+>
+> Mojo does not make this distinction with the `__copyinit__` method.  You can choose to do something like Rust's
+> Copy or Clone, though rust's distinction is useful.
 
 Let's think about vanilla python and look at this code
 
