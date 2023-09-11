@@ -22,7 +22,7 @@ from pathlib import Path
 import platform
 from typing import Literal
 
-from excursor.core.process_39 import Run
+from daak.process_39 import Run
 
 
 @dataclass(kw_only=True)

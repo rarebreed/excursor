@@ -23,7 +23,7 @@ import platform
 import shutil
 from typing import Literal, TypeAlias
 
-from excursor.core.process import Run
+from daak.process import Run
 
 
 @dataclass(kw_only=True)
@@ -35,7 +35,7 @@ class Installer(ABC):
     uninstall_cmd: str = field(init=False)
     update_cmd: str = field(init=False)
 
-    def extras(self, flags: str | list[str] | None, **extras) -> str:
+    def extras(self, flags: str | list[str] | None, **extras: dict[str, str]) -> str:
         match flags:
             case None:
                 flags = []
@@ -59,7 +59,7 @@ class Installer(ABC):
         *,
         pw: str | None = None,
         flags: str | list[str] | None = None,
-        **extras
+        **extras: dict[str, str]
     ) -> tuple[Run, Process]:
         extra_args = self.extras(flags, **extras)
         install = f"{'sudo ' if pw else ''}{self.manager} {self.install_cmd} {extra_args} {' '.join(pkgs)}"
