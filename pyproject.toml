@@ -25,9 +25,11 @@ plotly = {version = "^5.15", optional = true}
 ipywidgets = {version = "^8.0", optional = true}
 jupyterlab = {version = "^4.0", optional = true}
 
-# infra: infrastructure tools, like orchestrators and distributed compute
 # ray: distributed compute
-torch = {version = "^2.0.1+cpu", optional = true, source = "pytorch"}
+# If you are on linux, uncomment the torch line below
+#torch = {version = "^2.0.1+cpu", optional = true, source = "pytorch"}
+# If you are not on a mac, comment this line out
+torch = {version = "^2.0.1", optional = true}
 ray = {extras = ["rllib", "serve", "tune"], version = "^2.6.1"}
 
 # data: tools for data analytics, cleaning and ops
@@ -53,10 +55,10 @@ infra = ["ray", "prefect"]
 data = ["polars", "pyarrow", "scrapy", "duckdb"]
 ray = ["ray"]
 
-[[tool.poetry.source]]
-name = "pytorch"
-url = "https://download.pytorch.org/whl/cpu"
-priority = "supplemental"
+# [[tool.poetry.source]]
+# name = "pytorch"
+# url = "https://download.pytorch.org/whl/cpu"
+# priority = "supplemental"
 
 [build-system]
 requires = ["poetry-core"]
