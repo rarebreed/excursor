@@ -55,7 +55,7 @@ def make_test_result(days_ago: int, hours: int):
 def make_suite():
     tests = ["test_example_1", "test_it_works", "test_dt_endpoint", "test_service"]
     with open("test-runs.ndjson", "w") as test_f:
-        for t in range(30):
+        for t in range(100):
             hours = randint(0, 24)
             test_results = {tests[randint(0, 3)]: make_test_result(t, hours) for i in range(5)}
             suite = TestSuite(tests=test_results)
