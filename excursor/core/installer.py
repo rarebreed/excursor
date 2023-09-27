@@ -159,9 +159,8 @@ class SysInstaller(Installer):
                 self.distro = "mac"
                 self.manager = "brew"
 
-
     def get_system(self):
-        uname = platform.uname() 
+        uname = platform.uname()
         system = uname.system.lower()
         arch = uname.machine
         match [system, arch]:
@@ -180,7 +179,6 @@ class SysInstaller(Installer):
             case _:
                 self.os = "unsupported"
                 self.arch = "x86_64"
-
 
     async def is_installed(self, pkg: str) -> Path | None:
         which = Run(cmd=f"which {pkg}", shell=True)
@@ -270,7 +268,7 @@ class PythonDevel:
         env["PATH"] = f"{asdf_path}/shims:{asdf_path}/bin:" + os.environ["PATH"]
         print(f"PATH is now {env['PATH']}")
         return env
-    
+
     def set_local_path(self):
         local_path = Path.home() / ".local"
         env = os.environ
@@ -329,9 +327,9 @@ class PythonDevel:
     async def _create_venv(self, name="venv"):
         # Install pipx
         env = self.set_asdf_path()
-        await Run("pip install --user pipx",env=env).run()
+        await Run("pip install --user pipx", env=env).run()
         await Run("pipx ensurepath", env=env).run()
-        
+
         # Since we're running inside a python interpreter, the PATH hasn't actually changed, even if we source rc
         # so let's manually add them
         env = self.set_local_path()
