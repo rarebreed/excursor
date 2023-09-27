@@ -20,6 +20,7 @@ cd excursor
 python -m venv setup
 source setup/bin/activate
 pip install daak
+
 ```
 
 This will clone excursor on your system, create a virtual environment, activate it, and install a module dependency.
