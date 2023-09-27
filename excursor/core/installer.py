@@ -25,17 +25,36 @@ from typing import Literal, TypeAlias
 
 from daak.process import Run
 
+PackMan: TypeAlias = Literal["dnf", "apt", "brew"]
+OsTypes: TypeAlias = Literal["mac", "linux", "unsupported"]
+Distros: TypeAlias = Literal["mac", "fedora", "debian", "ubuntu", "centos", "amazon", "unsupported"]
+Arches: TypeAlias = Literal["x86_64", "aarch64"]
+
 
 @dataclass(kw_only=True)
 class Installer(ABC):
-    os: str = field(init=False)
-    arch: str = field(init=False)
-    manager: str = field(init=False)
-    install_cmd: str = field(init=False)
-    uninstall_cmd: str = field(init=False)
-    update_cmd: str = field(init=False)
+    """Abstract base class that defines what an installer does"""
+    os: OsTypes = field(init=False)
+    arch: Arches = field(init=False)
+    manager: PackMan = field(init=False)
+    install_cmd: str = "install"
+    uninstall_cmd: str = "uninstall"
+    update_cmd: str = "update"
+    upgrade_cmd: str = "upgrade"
 
     def extras(self, flags: str | list[str] | None, **extras: dict[str, str]) -> str:
+        """Additional flags (optional args) and extra dict that will be added to a command
+
+        Parameters
+        ----------
+        flags : str | list[str] | None
+            str or list of flags to add to command
+
+        Returns
+        -------
+        str
+            Additional options to be added to command
+        """
         match flags:
             case None:
                 flags = []
@@ -100,29 +119,68 @@ class Installer(ABC):
 
 @dataclass(kw_only=True)
 class SysInstaller(Installer):
-    distro: str = field(init=False)
+    """Installer of system dependencies (think brew, dnf, apt, etc)
+    """
+    distro: Distros = field(init=False)
 
     def __post_init__(self):
-        uname = platform.uname()
-        self.os = uname.system.lower()
-        self.arch = uname.machine
+        self.get_system()
+
         match self.os:
             case "linux":
                 with open("/etc/os-release", "r") as rel_f:
-                    rel_f.read()
+                    for line in rel_f.readlines():
+                        if line.startswith("NAME"):
+                            if "fedora" in line:
+                                self.distro = "fedora"
+                                self.manager = "dnf"
+                            elif "debian" in line:
+                                self.distro = "debian"
+                                self.manager = "apt"
+                                self.uninstall_cmd = "remove"
+                            elif "ubuntu" in line:
+                                self.distro = "ubuntu"
+                                self.manager = "apt"
+                                self.uninstall_cmd = "remove"
+                            elif "centos" in line:
+                                self.distro = "centos"
+                                self.manager = "dnf"
+                            elif "amazon" in line:
+                                self.distro = "amazon"
+                                self.manager = "dnf"
+                            else:
+                                self.distro = "unsupported"
+                                self.manager = "apt"
                     # TODO: each distro has different contents.  need to determine the keys empirically
                     # For now, assume fedora
                     self.distro = "fedora"
                     self.manager = "dnf"
-                    self.install_cmd = "install"
-                    self.uninstall_cmd = "remove"
-                    self.update_cmd = "upgrade"
             case "darwin":
-                self.distro = "macos"
+                self.distro = "mac"
                 self.manager = "brew"
-                self.install_cmd = "install"
-                self.uninstall_cmd = "uninstall"
-                self.update_cmd = "update"
+
+
+    def get_system(self):
+        uname = platform.uname() 
+        system = uname.system.lower()
+        arch = uname.machine
+        match [system, arch]:
+            case ["linux", "x86_64"]:
+                self.os = "linux"
+                self.arch = "x86_64"
+            case ["linux", "aarch64"]:
+                self.os = "linux"
+                self.arch = "aarch64"
+            case ["darwin", "x86_64"]:
+                self.os = "mac"
+                self.arch = "aarch64"
+            case ["darwin", "aarch64"]:
+                self.os = "mac"
+                self.arch = "aarch64"
+            case _:
+                self.os = "unsupported"
+                self.arch = "x86_64"
+
 
     async def is_installed(self, pkg: str) -> Path | None:
         which = Run(cmd=f"which {pkg}", shell=True)
@@ -166,7 +224,7 @@ class PythonDevel:
     def __post_init__(self):
         self.sys_installer = SysInstaller()
         match self.sys_installer.distro:
-            case "fedora":
+            case "fedora" | "amazon":
                 self.devel_libs = [
                     "curl", "git", "make", "gcc", "patch", "zlib-devel", "bzip2", "bzip2-devel", "readline-devel",
                     "sqlite", "sqlite-devel", "openssl-devel", "tk-devel", "libffi-devel", "xz-devel", "libuuid-devel",
@@ -204,6 +262,22 @@ class PythonDevel:
             if proc.returncode != 0:
                 await Run("xcode-select --install").run()
 
+    def set_asdf_path(self):
+        # Since we're running inside a python interpreter, the PATH hasn't actually changed, even if we source rc
+        # so let's manually add them
+        asdf_path = Path.home() / ".asdf"
+        env = os.environ
+        env["PATH"] = f"{asdf_path}/shims:{asdf_path}/bin:" + os.environ["PATH"]
+        print(f"PATH is now {env['PATH']}")
+        return env
+    
+    def set_local_path(self):
+        local_path = Path.home() / ".local"
+        env = os.environ
+        env["PATH"] = f"{local_path}/bin:" + os.environ["PATH"]
+        print(f"PATH is now {env['PATH']}")
+        return env
+
     async def _install_asdf(self):
         """Install asdf"""
         asdf_home = Path.home() / ".asdf"
@@ -226,10 +300,7 @@ class PythonDevel:
 
         # Since we're running inside a python interpreter, the PATH hasn't actually changed, even if we source rc
         # so let's manually add them
-        asdf_path = Path.home() / ".asdf"
-        env = os.environ
-        env["PATH"] = f"{asdf_path}/shims:{asdf_path}/bin:" + os.environ["PATH"]
-        print(f"PATH is now {env['PATH']}")
+        env = self.set_asdf_path()
 
         # Install asdf plugins for python, java and nodejs
         python_plugin = Run("asdf plugin add python https://github.com/danhper/asdf-python.git", env=env)
@@ -239,10 +310,12 @@ class PythonDevel:
         nodejs_plugin = Run("asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git", env=env)
         await nodejs_plugin()
 
+        # Get the most recent python version
+
         # Install python 3.11.4 through asdf and make it local
-        install_python = Run("asdf install python 3.11.4", env=env)
+        install_python = Run("asdf install python 3.11.5", env=env)
         await install_python()
-        local_python = Run("asdf local python 3.11.4", env=env)
+        local_python = Run("asdf local python 3.11.5", env=env)
         await local_python()
 
         # TODO: Install graalvm java
@@ -255,8 +328,15 @@ class PythonDevel:
 
     async def _create_venv(self, name="venv"):
         # Install pipx
-
-        await Run(f"python3 -m venv {name}").run()
+        env = self.set_asdf_path()
+        await Run("pip install --user pipx",env=env).run()
+        await Run("pipx ensurepath", env=env).run()
+        
+        # Since we're running inside a python interpreter, the PATH hasn't actually changed, even if we source rc
+        # so let's manually add them
+        env = self.set_local_path()
+        await Run("pipx install virtualenv", env=env).run()
+        await Run(f"virtualenv -p python3.11.5 {name}").run()
 
     async def _create_project(self, name: str, packages: dict[str, list[str]] = PyProjectPkgs):
         project_path = Path(name)
