@@ -3,5 +3,6 @@
 .pytest_cache/
 
 venv/
-
+.venv/
+.ruff_cache/
 .tool-versions
