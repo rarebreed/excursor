@@ -4,6 +4,7 @@
 import asyncio
 from asyncio.subprocess import Process
 from dataclasses import dataclass, field
+from os import _Environ
 from pathlib import Path
 from subprocess import PIPE
 import time
@@ -23,6 +24,7 @@ class Run:
     text: Union[bool, None] = None
     sudo: bool = False
     output: str = ""
+    env: _Environ[str] | None = field(repr=False, default=None)
 
     def __post_init__(self):
         if self.cmd.startswith("sudo") and not self.sudo:
@@ -136,7 +138,6 @@ if __name__ == "__main__":
         )
         # note, we don't have to return multi
         print(multi[0])
-    # asyncio.run(main())
 
     run = Run(cmd="sudo dnf", args=["update", "-y"])
     with asyncio.Runner() as launcher:

@@ -396,6 +396,39 @@ class PythonDevel:
                 for pkg in PyProjectPkgs[key]:
                     await Run(cmd).run()
 
+    def _uninstall_sysdeps(self):
+        print("Uninstalling sys dependencies is not supported")
+
+    async def _uninstall_poetry(self):
+        self._check_venv()
+
+        _, proc = await Run("poetry -V").run(throw=False)
+        if proc.returncode != 0:
+            print("poetry is not installed")
+            return
+
+        if self.sys_installer.os == "mac":
+            if "VIRTUAL_ENV" in os.environ:
+                print("Please deactivate the virtual environment before continuing")
+                print("Run the command `deactivate` in your shell and rerun")
+                sys.exit(0)
+            with open("/tmp/poetry.sh", "w") as tp_f:
+                tp_f.write("#!/bin/zsh\n")
+                tp_f.write("curl -sSL https://install.python-poetry.org | python3 - --uninstall\n")
+            subprocess.call(["sh", "/tmp/poetry.sh"])
+        else:
+            await Run("curl -sSL https://install.python-poetry.org | python3 - --uninstall").run()
+            if self.sys_installer.os == "mac":
+                print("reactivate your virtual env")
+
+    async def _uninstall_venv(self, name="venv"):
+        self._check_venv()
+        env = self.set_asdf_path()
+        await Run("pipx uninstall virtualenv", env=env).run()
+
+        sh, proc = await Run("which virtualenv").run()
+        print(sh.output)
+
 
 if __name__ == "__main__":
     from argparse import ArgumentParser

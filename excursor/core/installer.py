@@ -304,6 +304,18 @@ class PythonDevel:
             print(f"Old .zshrc is now {zshrc_f}.old")
             shutil.move(zshrc_bak_f, zshrc_f)
 
+        tool_version_path = Path.home() / ".tool-versions"
+        if tool_version_path.exists():
+            tool_version_path.unlink()
+            print(f"Removed {tool_version_path}")
+
+        curr_tool_versions = Path.cwd() / ".tool-versions"
+        if curr_tool_versions.exists():
+            curr_tool_versions.unlink()
+            print(f"Deleted {curr_tool_versions}")
+
+        print("Please run `source ./.zshrc` to configure your shell")
+
     async def _install_asdf(self):
         """Install asdf"""
         await self._uninstall_asdf()
@@ -380,7 +392,7 @@ class PythonDevel:
         self._check_venv()
         env = self.set_asdf_path()
         await Run("pipx install virtualenv", env=env).run()
-        await Run(f"virtualenv -p python3.11.5 {name}").run()
+        # await Run(f"virtualenv -p python3.11.5 {name}").run()
 
     async def _create_project(self, name: str, packages: dict[str, list[str]] = PyProjectPkgs):
         project_path = Path(name)
@@ -388,7 +400,6 @@ class PythonDevel:
             await Run(f"poetry new {name}").run()
 
         os.environ["PATH"]
-        os.environ["PATH"] = ""
 
         for key in packages:
             for pkg in PyProjectPkgs[key]:
@@ -398,33 +409,71 @@ class PythonDevel:
                 for pkg in PyProjectPkgs[key]:
                     await Run(cmd).run()
 
+    async def _uninstall_sysdeps(self):
+        print("Uninstalling sys dependencies is not supported")
+
+    async def _uninstall_poetry(self):
+        self._check_venv()
+
+        _, proc = await Run("poetry -V").run(throw=False)
+        if proc.returncode != 0:
+            print("poetry is not installed")
+            return
+
+        if self.sys_installer.os == "mac":
+            if "VIRTUAL_ENV" in os.environ:
+                print("Please deactivate the virtual environment before continuing")
+                print("Run the command `deactivate` in your shell and rerun")
+                sys.exit(0)
+            with open("/tmp/poetry.sh", "w") as tp_f:
+                tp_f.write("#!/bin/zsh\n")
+                tp_f.write("curl -sSL https://install.python-poetry.org | python3 - --uninstall\n")
+            subprocess.call(["sh", "/tmp/poetry.sh"])
+        else:
+            await Run("curl -sSL https://install.python-poetry.org | python3 - --uninstall").run()
+            if self.sys_installer.os == "mac":
+                print("reactivate your virtual env")
+
+    async def _uninstall_venv(self, name="venv"):
+        self._check_venv()
+        env = self.set_asdf_path()
+        await Run("pipx uninstall virtualenv", env=env).run(throw=False)
+
+        sh, _ = await Run("which virtualenv").run(throw=False)
+        print(sh.output)
+
 
 if __name__ == "__main__":
     from argparse import ArgumentParser
 
-    def install(options: list[str]):
+    def install(clean: bool, options: list[str]):
         pd = PythonDevel()
         # Determine which parts to do.  First, reduce to a set.  Next, order my the value
-        opt_set = set(options)
-        installation = [
-            pd._install_sysdeps,
-            pd._install_asdf,
-            pd._install_poetry,
-            pd._create_venv
-        ]
+        actions = []
 
-        if "full" not in opt_set:
-            if "sys" not in options:
-                installation.remove(pd._install_sysdeps)
-            if "asdf" not in options:
-                installation.remove(pd._install_asdf)
-            if "poetry" not in options:
-                installation.remove(pd._install_poetry)
-            if "venv" not in options:
-                installation.remove(pd._create_venv)
+        if "sys" in options:
+            if clean:
+                actions.append(pd._uninstall_sysdeps)
+            else:
+                actions.append(pd._install_sysdeps)
+        if "asdf" in options:
+            if clean:
+                actions.append(pd._uninstall_asdf)
+            else:
+                actions.append(pd._install_asdf)
+        if "poetry" in options:
+            if clean:
+                actions.append(pd._uninstall_poetry)
+            else:
+                actions.append(pd._install_poetry)
+        if "venv" in options:
+            if clean:
+                actions.append(pd._uninstall_venv)
+            else:
+                actions.append(pd._create_venv)
 
         with asyncio.Runner() as runner:
-            for fn in installation:
+            for fn in actions:
                 runner.run(fn())
 
         # await pd._create_project("teaching", ["dev", "ds", "notebook" "data"])
@@ -436,6 +485,7 @@ if __name__ == "__main__":
         help="What parts to install",
         choices=["full", "sys", "asdf", "poetry", "venv"]
     )
+    parser.add_argument("-c", "--clean", help="Uninstall the options", action="store_true")
     args = parser.parse_args()
 
-    install(args.options)
+    install(args.clean, args.options)
