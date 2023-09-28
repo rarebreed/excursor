@@ -658,13 +658,12 @@ typing = ["mypy (>=0.990)"]
 
 [[package]]
 name = "daak"
-version = "0.1.0"
+version = "0.1.1"
 description = "Asynchronous subprocess runner"
 optional = false
-python-versions = ">=3.11,<4.0"
+python-versions = ">=3.9,<4.0"
 files = [
-    {file = "daak-0.1.0-py3-none-any.whl", hash = "sha256:6d0c974c8adb008fed419fe9201370b2a0ee1e832fb06302096363cf3ff04824"},
-    {file = "daak-0.1.0.tar.gz", hash = "sha256:a9bffa31d4b4e178ded1b58560a8b99c944ffd140d54a1da4d6f3763b3c47ffe"},
+    {file = "daak-0.1.1-py3-none-any.whl", hash = "sha256:b0500779deeca62f8834405717fae5aec40681c6db08db352d4cf0481e50b63b"},
 ]
 
 [[package]]
