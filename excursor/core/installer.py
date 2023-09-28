@@ -314,7 +314,7 @@ class PythonDevel:
             curr_tool_versions.unlink()
             print(f"Deleted {curr_tool_versions}")
 
-        print("Please run `source ./.zshrc` to configure your shell")
+        print("Please run `source ~/.zshrc` to configure your shell")
 
     async def _install_asdf(self):
         """Install asdf"""
@@ -451,25 +451,24 @@ if __name__ == "__main__":
         # Determine which parts to do.  First, reduce to a set.  Next, order my the value
         actions = []
 
-        if "sys" in options:
-            if clean:
-                actions.append(pd._uninstall_sysdeps)
-            else:
-                actions.append(pd._install_sysdeps)
-        if "asdf" in options:
-            if clean:
-                actions.append(pd._uninstall_asdf)
-            else:
-                actions.append(pd._install_asdf)
-        if "poetry" in options:
-            if clean:
-                actions.append(pd._uninstall_poetry)
-            else:
-                actions.append(pd._install_poetry)
-        if "venv" in options:
-            if clean:
+        # Clean operations should be in reverse order of installs
+        if clean:
+            if "venv" in options:
                 actions.append(pd._uninstall_venv)
-            else:
+            if "poetry" in options:
+                actions.append(pd._uninstall_poetry)
+            if "asdf" in options:
+                actions.append(pd._uninstall_asdf)
+            if "sys" in options:
+                actions.append(pd._uninstall_sysdeps)
+        else:
+            if "sys" in options:
+                actions.append(pd._install_sysdeps)
+            if "asdf" in options:
+                actions.append(pd._install_asdf)
+            if "poetry" in options:
+                actions.append(pd._install_poetry)
+            if "venv" in options:
                 actions.append(pd._create_venv)
 
         with asyncio.Runner() as runner:
