@@ -8,7 +8,7 @@ It will install the following:
 
 - asdf: to manage different languages and platforms
 - The system dependencies needed to build python from source
-- python 3.11.4
+- python 3.11.5
 - poetry to manage python projects
 """
 
@@ -21,14 +21,16 @@ import os
 from pathlib import Path
 import platform
 import shutil
+import subprocess
+import sys
 from typing import Literal, TypeAlias
 
-from daak.process import Run
+from excursor.core.process import Run
 
 PackMan: TypeAlias = Literal["dnf", "apt", "brew"]
 OsTypes: TypeAlias = Literal["mac", "linux", "unsupported"]
 Distros: TypeAlias = Literal["mac", "fedora", "debian", "ubuntu", "centos", "amazon", "unsupported"]
-Arches: TypeAlias = Literal["x86_64", "aarch64"]
+Arches: TypeAlias = Literal["x86_64", "arm64"]
 
 
 @dataclass(kw_only=True)
@@ -155,7 +157,7 @@ class SysInstaller(Installer):
                     # For now, assume fedora
                     self.distro = "fedora"
                     self.manager = "dnf"
-            case "darwin":
+            case "mac":
                 self.distro = "mac"
                 self.manager = "brew"
 
@@ -167,15 +169,15 @@ class SysInstaller(Installer):
             case ["linux", "x86_64"]:
                 self.os = "linux"
                 self.arch = "x86_64"
-            case ["linux", "aarch64"]:
+            case ["linux", "arm64"]:
                 self.os = "linux"
-                self.arch = "aarch64"
+                self.arch = "arm64"
             case ["darwin", "x86_64"]:
                 self.os = "mac"
-                self.arch = "aarch64"
-            case ["darwin", "aarch64"]:
+                self.arch = "arm64"
+            case ["darwin", "arm64"]:
                 self.os = "mac"
-                self.arch = "aarch64"
+                self.arch = "arm64"
             case _:
                 self.os = "unsupported"
                 self.arch = "x86_64"
@@ -234,7 +236,7 @@ class PythonDevel:
                     "curl", "libncursesw5-dev", "xz-utils", "tk-dev", "libxml2-dev", "libxmlsec1-dev", "libffi-dev",
                     "liblzma-dev"
                 ]
-            case "macos":
+            case "mac":
                 self.devel_libs = ["openssl", "readline", "sqlite3", "xz", "zlib", "tcl-tk"]
 
     async def shell(self) -> str:
@@ -253,11 +255,16 @@ class PythonDevel:
         if self.sys_installer.distro == "linux":
             pass
 
-        _, proc = await self.sys_installer.install(self.devel_libs, pw=self.pw, flags="-y")
+        flags = "-y"
+        if self.sys_installer.manager == "brew":
+            flags = None
+
+        _, proc = await self.sys_installer.install(self.devel_libs, pw=self.pw, flags=flags)
         if self.sys_installer.distro == "macos":
             which = Run("xocde-select --version")
             _, proc = await which.run(throw=False)
             if proc.returncode != 0:
+                print("xcode is not installed, running installer, follow prompts...")
                 await Run("xcode-select --install").run()
 
     def set_asdf_path(self):
@@ -276,13 +283,32 @@ class PythonDevel:
         print(f"PATH is now {env['PATH']}")
         return env
 
-    async def _install_asdf(self):
-        """Install asdf"""
+    async def _uninstall_asdf(self):
         asdf_home = Path.home() / ".asdf"
         if asdf_home.exists():
             print(f"Deleting old {asdf_home}")
             shutil.rmtree(asdf_home)
-        asdf = Run("git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.12.0")
+
+            new_zsh = []
+            zshrc_f = Path.home() / ".zshrc"
+            zshrc_bak_f = Path.home() / ".zshrc.bak"
+            print("editing .zshrc file")
+            with open(zshrc_f, "r+") as zsh_f:
+                for line in zsh_f.readlines():
+                    if ". $HOME/.asdf/asdf.sh" in line:
+                        line = f"# {line}\n"
+                    new_zsh.append(line)
+            with open(zshrc_bak_f, "w") as zshb_f:
+                zshb_f.writelines(new_zsh)
+            shutil.copy(zshrc_f, Path.home() / ".zshrc.old")
+            print(f"Old .zshrc is now {zshrc_f}.old")
+            shutil.move(zshrc_bak_f, zshrc_f)
+
+    async def _install_asdf(self):
+        """Install asdf"""
+        await self._uninstall_asdf()
+
+        asdf = Run("git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.13.0")
         await asdf()
         shell = await self.shell()
         match shell:
@@ -293,7 +319,7 @@ class PythonDevel:
             case other:
                 raise Exception(f"shell {other} is not supported")
         with open(Path.home() / rc, "+a") as zshrc:
-            zshrc.write("\n. $HOME/.asdf/asdf.sh")
+            zshrc.write("\n. $HOME/.asdf/asdf.sh\n")
         print("wrote asdf to $HOME/.asdf")
 
         # Since we're running inside a python interpreter, the PATH hasn't actually changed, even if we source rc
@@ -307,32 +333,52 @@ class PythonDevel:
         await java_plugin()
         nodejs_plugin = Run("asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git", env=env)
         await nodejs_plugin()
+        await Run("asdf plugin add pipx https://github.com/joe733/asdf-pipx.git", env=env).run()
 
         # Get the most recent python version
 
-        # Install python 3.11.4 through asdf and make it local
+        # Install python 3.11.5 through asdf and make it local
         install_python = Run("asdf install python 3.11.5", env=env)
         await install_python()
         local_python = Run("asdf local python 3.11.5", env=env)
         await local_python()
+        await Run("asdf install pipx 1.2.0", env=env).run()
+        await Run("asdf global pipx 1.2.0", env=env).run()
 
         # TODO: Install graalvm java
         # TODO: Install nodejs
 
-    async def _install_poetry(self):
-        # Make sure that we set python in our shell
+    def _check_venv(self):
+        if "VIRTUAL_ENV" in os.environ:
+            print("Please deactivate the virtual environment before continuing")
+            print("Run the command `deactivate` in your shell and rerun")
+            sys.exit(0)
 
-        await Run("curl -sSL https://install.python-poetry.org | python3 -").run()
+    async def _install_poetry(self):
+        self._check_venv()
+
+        _, proc = await Run("poetry -V").run(throw=False)
+        if proc.returncode == 0:
+            print("poetry is already installed")
+            return
+
+        if self.sys_installer.os == "mac":
+            if "VIRTUAL_ENV" in os.environ:
+                print("Please deactivate the virtual environment before continuing")
+                print("Run the command `deactivate` in your shell and rerun")
+                sys.exit(0)
+            with open("/tmp/poetry.sh", "w") as tp_f:
+                tp_f.write("#!/bin/zsh\n")
+                tp_f.write("curl -sSL https://install.python-poetry.org | python3 -\n")
+            subprocess.call(["sh", "/tmp/poetry.sh"])
+        else:
+            await Run("curl -sSL https://install.python-poetry.org | python3 -").run()
+            if self.sys_installer.os == "mac":
+                print("reactivate your virtual env")
 
     async def _create_venv(self, name="venv"):
-        # Install pipx
+        self._check_venv()
         env = self.set_asdf_path()
-        await Run("pip install --user pipx", env=env).run()
-        await Run("pipx ensurepath", env=env).run()
-
-        # Since we're running inside a python interpreter, the PATH hasn't actually changed, even if we source rc
-        # so let's manually add them
-        env = self.set_local_path()
         await Run("pipx install virtualenv", env=env).run()
         await Run(f"virtualenv -p python3.11.5 {name}").run()
 
