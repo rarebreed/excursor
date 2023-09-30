@@ -138,7 +138,6 @@ if __name__ == "__main__":
         )
         # note, we don't have to return multi
         print(multi[0])
-    # asyncio.run(main())
 
     run = Run(cmd="sudo dnf", args=["update", "-y"])
     with asyncio.Runner() as launcher:

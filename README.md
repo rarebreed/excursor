@@ -29,16 +29,25 @@ This will clone excursor on your system.  Then run the following commands:
 - Optional (if you want python 3.9.x): `asdf install python 3.9.18`
     - And to make it the default: `asdf global python 3.9.18`
 
-The `venv` command at the end will also install a new virtual environment in excursor.  To activate it:
+You can also run the commands all at once, but on the first run through, it is recommended to install each one at a time
 
 ```bash
-source venv/bin/activate
+python3 -m excursor.core.installer sys asdf poetry venv
 ```
 
-Then you can install the full excursor dependencies
+Once all the features are installed, you can install the full excursor dependencies using `poetry`
 
 ```bash
 poetry install --all-extras --with dev
 ```
 
 Skip any of the commands above if you already have asdf, poetry, or virtualenv already installed.
+
+## Uninstalling a feature
+
+You can also uninstall a feature by appending with a `-c` or `--clean` at the end.  It is recommended to uninstall in
+the reverse order as above (eg, clean venv, then poetry, then asdf)
+
+```bash
+python3 -m excursor.core.installer venv poetry asdf -c
+```

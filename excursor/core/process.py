@@ -1,6 +1,5 @@
 import platform
 maj, mini, patch = [int(x) for x in platform.python_version_tuple()]
-print(f"Using python {maj}.{mini}.{patch}")
 
 if maj == 3 and mini >= 11:
     # module = importlib.import_module("excursor.core._process")
