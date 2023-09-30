@@ -9,7 +9,7 @@ import os
 from os import _Environ
 from pathlib import Path
 from subprocess import PIPE
-from typing import IO, Any, Literal
+from typing import IO, Any, Coroutine, Literal, Self
 
 
 @dataclass
@@ -38,19 +38,19 @@ class Run:
         if self.env is None:
             self.env = os.environ
 
-    def __call__(self, *, pw: str | None = None):
+    def __call__(self, *, pw: str | None = None) -> Coroutine[Any, Any, Process]:
         if self.shell:
             return self._run_shell(pw=pw)
         else:
             return self._run_exec(pw=pw)
 
-    async def run(self, *, pw: str | None = None, throw=True):
+    async def run(self, *, pw: str | None = None, throw=True) -> tuple[Self, Process]:
         proc = await self(pw=pw)
         if throw and proc.returncode != 0:
             raise Exception(f"Process failed with exit code {proc.returncode}")
         return self, proc
 
-    async def _run_exec(self, *, pw: str | None):
+    async def _run_exec(self, *, pw: str | None) -> Process:
         cmd = self.cmd
         args = self.args
         if self.sudo:
@@ -70,7 +70,7 @@ class Run:
         )
         return await self._get_output(proc, pw)
 
-    async def _run_shell(self, *, pw: str | None):
+    async def _run_shell(self, *, pw: str | None) -> Process:
         cmd = [self.cmd, *self.args]
         cmd = " ".join(cmd)
         if self.sudo:
@@ -97,7 +97,7 @@ class Run:
             self.output += out
             print(out, end="")
 
-    async def _get_output(self, proc: Process, pw: str | None):
+    async def _get_output(self, proc: Process, pw: str | None) -> Process:
         # Read the lines in stderr
         match [self.sudo, pw]:
             case [True, str()]:

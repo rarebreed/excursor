@@ -132,7 +132,9 @@ class SysInstaller(Installer):
             case "linux":
                 with open("/etc/os-release", "r") as rel_f:
                     for line in rel_f.readlines():
-                        if line.startswith("NAME"):
+                        if line.startswith("NAME="):
+                            print(line)
+                            line = line.lower()
                             if "fedora" in line:
                                 self.distro = "fedora"
                                 self.manager = "dnf"
@@ -153,13 +155,11 @@ class SysInstaller(Installer):
                             else:
                                 self.distro = "unsupported"
                                 self.manager = "apt"
-                    # TODO: each distro has different contents.  need to determine the keys empirically
-                    # For now, assume fedora
-                    self.distro = "fedora"
-                    self.manager = "dnf"
+                            break
             case "mac":
                 self.distro = "mac"
                 self.manager = "brew"
+        print(f"On {self.distro} using {self.manager}")
 
     def get_system(self):
         uname = platform.uname()
@@ -181,6 +181,7 @@ class SysInstaller(Installer):
             case _:
                 self.os = "unsupported"
                 self.arch = "x86_64"
+        print(f"os type is {self.os} on {self.arch}")
 
     async def is_installed(self, pkg: str) -> Path | None:
         which = Run(cmd=f"which {pkg}", shell=True)
@@ -241,8 +242,7 @@ class PythonDevel:
 
     async def shell(self) -> str:
         """Determine default shell type"""
-        sh = Run("echo $SHELL")
-        await sh()
+        sh, _ = await Run("echo $SHELL", shell=True).run()
         print(f"shell is {sh.output}")
         return sh.output.strip().split("/")[-1]
 
