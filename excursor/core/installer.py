@@ -14,6 +14,7 @@ It will install the following:
 
 
 from abc import ABC, abstractmethod
+from argparse import ArgumentParser
 import asyncio
 from asyncio.subprocess import Process
 from dataclasses import dataclass, field
@@ -443,40 +444,37 @@ class PythonDevel:
         print(sh.output)
 
 
-if __name__ == "__main__":
-    from argparse import ArgumentParser
+def install(clean: bool, options: list[str]):
+    pd = PythonDevel()
+    # Determine which parts to do.  First, reduce to a set.  Next, order my the value
+    actions = []
 
-    def install(clean: bool, options: list[str]):
-        pd = PythonDevel()
-        # Determine which parts to do.  First, reduce to a set.  Next, order my the value
-        actions = []
+    # Clean operations should be in reverse order of installs
+    if clean:
+        if "venv" in options:
+            actions.append(pd._uninstall_venv)
+        if "poetry" in options:
+            actions.append(pd._uninstall_poetry)
+        if "asdf" in options:
+            actions.append(pd._uninstall_asdf)
+        if "sys" in options:
+            actions.append(pd._uninstall_sysdeps)
+    else:
+        if "sys" in options:
+            actions.append(pd._install_sysdeps)
+        if "asdf" in options:
+            actions.append(pd._install_asdf)
+        if "poetry" in options:
+            actions.append(pd._install_poetry)
+        if "venv" in options:
+            actions.append(pd._create_venv)
 
-        # Clean operations should be in reverse order of installs
-        if clean:
-            if "venv" in options:
-                actions.append(pd._uninstall_venv)
-            if "poetry" in options:
-                actions.append(pd._uninstall_poetry)
-            if "asdf" in options:
-                actions.append(pd._uninstall_asdf)
-            if "sys" in options:
-                actions.append(pd._uninstall_sysdeps)
-        else:
-            if "sys" in options:
-                actions.append(pd._install_sysdeps)
-            if "asdf" in options:
-                actions.append(pd._install_asdf)
-            if "poetry" in options:
-                actions.append(pd._install_poetry)
-            if "venv" in options:
-                actions.append(pd._create_venv)
+    with asyncio.Runner() as runner:
+        for fn in actions:
+            runner.run(fn())
 
-        with asyncio.Runner() as runner:
-            for fn in actions:
-                runner.run(fn())
 
-        # await pd._create_project("teaching", ["dev", "ds", "notebook" "data"])
-
+def main():
     parser = ArgumentParser()
     parser.add_argument(
         "options",
@@ -488,3 +486,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     install(args.clean, args.options)
+
+
+if __name__ == "__main__":
+    main()
