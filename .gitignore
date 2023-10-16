@@ -6,3 +6,5 @@ venv/
 .venv/
 .ruff_cache/
 .tool-versions
+
+dist/
