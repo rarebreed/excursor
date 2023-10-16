@@ -45,6 +45,7 @@ class PluginReporter:
             print(f"============ {plugin.name} ===============")
         yield
 
+
 def pytest_configure(config: Config):
     plugin = PluginReporter()
     config.pluginmanager.register(plugin, "plugin.reporter")
