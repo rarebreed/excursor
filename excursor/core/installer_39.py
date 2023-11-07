@@ -24,17 +24,17 @@ import platform
 import shutil
 import subprocess
 import sys
-from typing import Literal, Optional, TypeAlias, Union
+from typing import Literal, Optional, Union
 
 from excursor.core.process import Run
 
-PackMan: TypeAlias = Literal["dnf", "apt", "brew"]
-OsTypes: TypeAlias = Literal["mac", "linux", "unsupported"]
-Distros: TypeAlias = Literal["mac", "fedora", "debian", "ubuntu", "centos", "amazon", "unsupported"]
-Arches: TypeAlias = Literal["x86_64", "arm64"]
+PackMan = Literal["dnf", "apt", "brew"]
+OsTypes = Literal["mac", "linux", "unsupported"]
+Distros = Literal["mac", "fedora", "debian", "ubuntu", "centos", "amazon", "unsupported"]
+Arches = Literal["x86_64", "arm64"]
 
 
-@dataclass(kw_only=True)
+@dataclass
 class Installer(ABC):
     """Abstract base class that defines what an installer does"""
     os: OsTypes = field(init=False)
@@ -119,7 +119,7 @@ class Installer(ABC):
         return run, proc
 
 
-@dataclass(kw_only=True)
+@dataclass
 class SysInstaller(Installer):
     """Installer of system dependencies (think brew, dnf, apt, etc)
     """
@@ -190,7 +190,7 @@ class SysInstaller(Installer):
             return Path(which.output.strip())
 
 
-PackageKeys: TypeAlias = Literal[
+PackageKeys = Literal[
     "dev",  # development packages like autopep8, pytest, ruff
     "ds",  # datascience like pytorch and numpy
     "notebook",  # notebook deps like jupyter, matplotlib
@@ -332,7 +332,8 @@ class PythonDevel:
         await java_plugin()
         nodejs_plugin = Run("asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git", env=env)
         await nodejs_plugin()
-        await Run("asdf plugin add pipx https://github.com/joe733/asdf-pipx.git", env=env).run()
+        pipx_plugin = Run("asdf plugin add pipx https://github.com/joe733/asdf-pipx.git", env=env)
+        await pipx_plugin()
 
         # Get the most recent python version
 
@@ -431,7 +432,7 @@ class PythonDevel:
         print(sh.output)
 
 
-def install(clean: bool, options: list[str]):
+async def install(clean: bool, options: list[str]):
     pd = PythonDevel()
     # Determine which parts to do.  First, reduce to a set.  Next, order my the value
     actions = []
@@ -456,9 +457,8 @@ def install(clean: bool, options: list[str]):
         if "venv" in options:
             actions.append(pd._create_venv)
 
-    with asyncio.Runner() as runner:
-        for fn in actions:
-            runner.run(fn())
+    for fn in actions:
+        await fn()
 
 
 def main():
@@ -472,7 +472,7 @@ def main():
     parser.add_argument("-c", "--clean", help="Uninstall the options", action="store_true")
     args = parser.parse_args()
 
-    install(args.clean, args.options)
+    asyncio.run(install(args.clean, args.options))
 
 
 if __name__ == "__main__":

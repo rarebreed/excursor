@@ -7,8 +7,7 @@ from dataclasses import dataclass, field
 from os import _Environ
 from pathlib import Path
 from subprocess import PIPE
-import time
-from typing import IO, Any, Self, Union
+from typing import IO, Any, Literal, Optional, Union
 
 
 @dataclass
@@ -24,7 +23,7 @@ class Run:
     text: Union[bool, None] = None
     sudo: bool = False
     output: str = ""
-    env: _Environ[str] | None = field(repr=False, default=None)
+    env: Union[_Environ[str], None] = field(repr=False, default=None)
 
     def __post_init__(self):
         if self.cmd.startswith("sudo") and not self.sudo:
@@ -40,7 +39,7 @@ class Run:
         else:
             return self._run_exec(pw=pw)
 
-    async def run(self, *, pw: Union[str, None] = None, throw=True) -> tuple[Self, Process]:
+    async def run(self, *, pw: Union[str, None] = None, throw=True) -> tuple["Run", Process]:
         proc = await self(pw=pw)
         if throw and proc.returncode != 0:
             raise Exception(f"Process failed with exit code {proc.returncode}")
@@ -61,7 +60,8 @@ class Run:
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             start_new_session=True,
-            cwd=self.cwd
+            cwd=self.cwd,
+            encoding="utf-8"
         )
         return await self._get_output(proc, pw)
 
@@ -83,21 +83,28 @@ class Run:
         )
         return await self._get_output(proc, pw)
 
-    async def _get_output(self, proc: Process, pw: Union[str, None]):
+    async def _read_stream(self, proc: Process, stream: Literal["stdout", "stderr"]):
+        std_stream = proc.stdout if stream == "stdout" else proc.stderr
+        while std_stream is not None and not std_stream.at_eof():
+            out = await std_stream.readline()
+            out = out.decode()
+            self.output += out
+            print(out, end="")
+
+    async def _get_output(self, proc: Process, pw: Optional[str]) -> Process:
         # Read the lines in stderr
-        if self.sudo and isinstance(pw, "str"):
+        if self.sudo and isinstance(pw, str):
             while True:
                 if proc.stderr is None:
-                    time.sleep(1)
-                    continue
+                    break
                 line = await proc.stderr.readuntil(b": ")
                 line = line.decode()
 
-                if proc.stdin is None:
-                    break
-
                 if self.sudo and line.startswith("[sudo]"):
                     print(line)
+                if proc.stdin is None:
+                    raise Exception("no stdin on child process")
+                else:
                     proc.stdin.write(f"{pw}\n".encode())
                     break
         elif self.sudo and pw is None:
@@ -105,19 +112,10 @@ class Run:
         else:
             ...
 
-        while True:
-            if proc.stderr is None:
-                break
-            line = await proc.stderr.readuntil(b": ")
-            line = line.decode()
-
-            if self.sudo and line.startswith("[sudo]"):
-                print(line)
-            if proc.stdin is None:
-                raise Exception("no stdin on child process")
-            else:
-                proc.stdin.write(f"{pw}\n".encode())
-                break
+        out_task = asyncio.create_task(self._read_stream(proc, "stdout"))
+        err_task = asyncio.create_task(self._read_stream(proc, "stderr"))
+        await out_task
+        await err_task
 
         return proc
 
@@ -140,6 +138,5 @@ if __name__ == "__main__":
         print(multi[0])
 
     run = Run(cmd="sudo dnf", args=["update", "-y"])
-    with asyncio.Runner() as launcher:
-        pw = input("Password: ")
-        launcher.run(run(pw=pw))
+    pw = input("Password: ")
+    asyncio.run(run(pw=pw))

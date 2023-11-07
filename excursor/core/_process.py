@@ -99,8 +99,8 @@ class Run:
 
     async def _get_output(self, proc: Process, pw: str | None) -> Process:
         # Read the lines in stderr
-        match [self.sudo, pw]:
-            case [True, str()]:
+        match[self.sudo, pw]:
+            case[True, str()]:
                 while True:
                     if proc.stderr is None:
                         break
@@ -114,7 +114,7 @@ class Run:
                     else:
                         proc.stdin.write(f"{pw}\n".encode())
                         break
-            case [True, None]:
+            case[True, None]:
                 raise Exception(
                     "self.sudo was True, but no password was provided")
             case _:
