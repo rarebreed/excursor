@@ -60,8 +60,7 @@ class Run:
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             start_new_session=True,
-            cwd=self.cwd,
-            encoding="utf-8"
+            cwd=self.cwd
         )
         return await self._get_output(proc, pw)
 
