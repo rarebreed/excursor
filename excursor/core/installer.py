@@ -166,17 +166,17 @@ class SysInstaller(Installer):
         uname = platform.uname()
         system = uname.system.lower()
         arch = uname.machine
-        match [system, arch]:
-            case ["linux", "x86_64"]:
+        match[system, arch]:
+            case["linux", "x86_64"]:
                 self.os = "linux"
                 self.arch = "x86_64"
-            case ["linux", "arm64"]:
+            case["linux", "arm64"]:
                 self.os = "linux"
                 self.arch = "arm64"
-            case ["darwin", "x86_64"]:
+            case["darwin", "x86_64"]:
                 self.os = "mac"
                 self.arch = "arm64"
-            case ["darwin", "arm64"]:
+            case["darwin", "arm64"]:
                 self.os = "mac"
                 self.arch = "arm64"
             case _:
