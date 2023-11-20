@@ -1,7 +1,5 @@
 # Mojo notes
 
-These notes will be in md format until the mojo SDK is released in September.
-
 This document is currently written for readers who already have experience with a programming language, so it will not
 start from first principles.  There will be frequent references to rust, but it is not required to know rust.
 
@@ -15,32 +13,35 @@ While mojo aims to be a superset of python, it is not yet there.  Some current l
 
 - No top-level variables (ie, variables that don't live inside a function or struct)
 - No python `class` type (but it does have `struct` which is the non-dynamic version of a class)
-- The SDK to run locally is only available on x86_64 for linux (ubuntu)
+- The SDK to run locally is only available on x86_64 for linux (ubuntu) or aarch64 mac
 - `def` is not fully equivalent to python's def yet (eg, mojo's scope is different)
 - See [proposal on dynamism](https://github.com/modularml/mojo/blob/main/proposals/mojo-and-dynamism.md) for more details on mojo's lack of dynamism
+- Many limitations in the std lib
+    - no builtin list or dict class
+    - almost no IO
 
 ## Functions in Mojo
 
-The bread and butter of almost all languages (java being a lonely outlier) are functions, and mojo is no exception.  In mojo,
-there are two ways to define a function:
+The bread and butter of almost all languages (java being a lonely outlier) are functions, and mojo is no exception.  In  
+mojo, there are two ways to define a function:
 
 - like python with `def`
 - or with `fn`
 
 > **Parameter vs Argument**
 > 
-> Many languages treat parameters and arguments as synonyms, but mojo has a more precise definition.  A parameter is what is in
-> the declaration of the function and is therefore compile time.  An argument is the runtime type/value that gets passed into
-> the function when it is called, and is therefore known at runtime.  This dovetails nicely with mojo's Parameterized Expressions
-> which are like generics and functions that can run at compile time.
+> Many languages treat parameters and arguments as synonyms, but mojo has a more precise definition.  A parameter is  
+> what is in the declaration of the function and is therefore compile time.  An argument is the runtime type/value that  
+> gets passed into the function when it is called, and is therefore known at runtime.  This dovetails nicely with mojo's  
+> Parameterized Expressions which are like generics and functions that can run at compile time.
 
-If using a `def` definition, type annotations for are not required (though still recommended) for a function's parameters or in the
-body of the function.  If using a `fn` definition, then the type annotations are required both for parameters, and for any locally
-declared variables in the body.
+If using a `def` definition, type annotations are not required (though still recommended) for a function's parameters or  
+in the body of the function.  If using a `fn` definition, then the type annotations are required both for parameters,  
+and for any locally declared variables in the body.
 
-Mojo uses a slightly modified version of the PEP-695 syntax (forthcoming in python 3.12 due out in early October 2023).  Unlike
-python type annotations where the return type can be inferred, in mojo, you must still specify the return type if using `fn` 
-definition.
+Mojo uses a slightly modified version of the PEP-695 syntax (forthcoming in python 3.12 due out in early October 2023).  
+Unlike python type annotations where the return type can be inferred, in mojo, you must still specify the return type if
+using `fn` definition.
 
 > **Async**: Mojo also has support for `async fn` and `async def` as well, along with the `await` keyword.
 
@@ -70,9 +71,9 @@ In rust, `let` and `let mut` would be the equivalent identifiers.
 
 ## Argument passing
 
-Some programmers may not even understand what _argument passing_ means.  Some languages have only one way to do it, like
-python.  Or it may have something awkward like java (which differentiates between Objects and primitives) and do
-Boxing and Unboxing when the arguments are primitives, thereby causing a performance hit.  And since (Un)Boxing is 
+Some programmers may not even understand what _argument passing_ means.  Some languages have only one way to do it, like  
+python.  Or it may have something awkward like java (which differentiates between Objects and primitives) and do  
+Boxing and Unboxing when the arguments are primitives, thereby causing a performance hit.  And since (Un)Boxing is  
 implicit, it is not obvious that there are different ways to pass args to java methods.
 
 So if you are not familiar with the terms, there are generally two different kinds of argument passing:
@@ -80,17 +81,17 @@ So if you are not familiar with the terms, there are generally two different kin
 - by value: (sometimes called by-copy) where the value of a variable is used
 - by reference: where the value is indirectly retrieved through reference or pointer dereferencing
 
-This is sometimes confusing to people, because pointers or references can be hard to conceptualize.  If it helps, think
-about _value equality_ versus _identity equality_ which is what Java does.  By default, in java, the `==` operator
-compares _identity equality_, meaning "does this variable point to the same memory as this other variable?".  But 95% of
-the time what we care about is _value equality_, or "does this variable have the same contents of this other variable?".
+This is sometimes confusing to people, because pointers or references can be hard to conceptualize.  If it helps, think  
+about _value equality_ versus _identity equality_ which is what Java does.  By default, in java, the `==` operator  
+compares _identity equality_, meaning "does this variable point to the same memory as this other variable?".  But 95% of  
+the time what we care about is _value equality_, or "does this variable have the same contents of this other variable?".  
 
-Also, a brief discussion of `ownership` needs to be mentioned.  Similarly to rust, mojo has a concept of ownership which
-basically just means "who is responsible for cleaning up this data?".  In languages without Garbage Collectors, this is
+Also, a brief discussion of `ownership` needs to be mentioned.  Similarly to rust, mojo has a concept of ownership which  
+basically just means "who is responsible for cleaning up this data?".  In languages without Garbage Collectors, this is  
 very important (and is what C and C++ lack).
 
-In mojo, by default, all parameters are immutable and passed by reference (an implicit keyword `borrowed` is added as a 
-prefix to the parameter name so that `foo(borrowed age: Int)` and `foo(age: Int)` are equivalent). However, there are 
+In mojo, by default, all parameters are immutable and passed by reference (an implicit keyword `borrowed` is added as a  
+prefix to the parameter name so that `foo(borrowed age: Int)` and `foo(age: Int)` are equivalent). However, there are  
 several ways to pass arguments to functions in mojo. An argument to a function can be:
 
 - **moved**: (aka _transferred_) where the ownership and _value_ of the argument is transferred to the function
@@ -123,11 +124,11 @@ several ways to pass arguments to functions in mojo. An argument to a function c
 > fn modify_employee(employee: refmut Employee): ...
 > ```
 
-Note that the default behavior is opposite to rust.  In rust, the default is to pass by value and to _move_ it (the data
-is transferred and then once out of scope is gone).  Mojo takes the stand that it is more common to want to pass by
-(immutable) reference and makes this the default.  This is also more similar to how python works, although most things
-in python are a mutable pass by reference (eg, lists, dicts, and most classes). You therefore do not need to mark the
-argument with a sigil (like `&foo`) that rust requires when you _do_ want to pass by immutable reference (they did
+Note that the default behavior is opposite to rust.  In rust, the default is to pass by value and to _move_ it (the data  
+is transferred and then once out of scope is gone).  Mojo takes the stand that it is more common to want to pass by  
+(immutable) reference and makes this the default.  This is also more similar to how python works, although most things  
+in python are a mutable pass by reference (eg, lists, dicts, and most classes). You therefore do not need to mark the  
+argument with a sigil (like `&foo`) that rust requires when you _do_ want to pass by immutable reference (they did  
 however consider this, and may reintroduce it depending on how their lifetime system works).
 
 When you do want to pass by value and _move_ it, then you do this in mojo
@@ -162,13 +163,13 @@ foo_by_mut_ref(obj)  # obj still exists and was mutated
 
 ## Copy vs Move vs Reference
 
-Unlike rust, mojo allows you to make types moveable or not (in rust, the affine type system requires all types to
-transfer the data and then effectively delete the old value, placing a lot of stress on memcpy performance).  In rust,
-one usually adds the `Copy` and/or `Clone` auto derived traits to a type to make it copy-able (shallow or value-wise) 
+Unlike rust, mojo allows you to make types moveable or not (in rust, the affine type system requires all types to  
+transfer the data and then effectively delete the old value, placing a lot of stress on memcpy performance).  In rust,  
+one usually adds the `Copy` and/or `Clone` auto derived traits to a type to make it copy-able (shallow or value-wise)  
 or cloneable (deep...for copying ref data).
 
-In mojo, copying is done manually by implementing a `__copyinit__` dunder method.  It is optional, but without an
-implementation, you can not put the type on the right hand side of an assignment.  Eg
+In mojo, copying is done manually by implementing a `__copyinit__` dunder method.  It is optional, but without an  
+implementation, you can not put the type on the right hand side of an assignment.  Eg  
 
 ```python
 # A type without a copy or move constructor
@@ -184,12 +185,12 @@ let obj2 = obj  # will fail here, because this would be a copy and there is no _
 
 > **Note**: I will use the acronym RHS for right hand side, and LHS for left hand side 
 
-After an assignment where the RHS type implements `__copyinit__`, the variable on the RHS is still available.  This is
-like a rust type that implements the `Copy` trait.  If a rust type does not implement the `Copy` trait, then the 
-variable RHS would have been _moved_ into the variable on the LHS.
+After an assignment where the RHS type implements `__copyinit__`, the variable on the RHS is still available.  This is  
+like a rust type that implements the `Copy` trait.  If a rust type does not implement the `Copy` trait, then the  
+variable RHS would have been _moved_ into the variable on the LHS.  
 
-I try to analogize that `__copyinit__` and `__moveinit__` are like the unix `cp` and `mv` commands respectively.
-With the `cp` command, the original source file will still exist after being called, whereas in the `mv` command,
+I try to analogize that `__copyinit__` and `__moveinit__` are like the unix `cp` and `mv` commands respectively.  
+With the `cp` command, the original source file will still exist after being called, whereas in the `mv` command,  
 the source file will no longer exist.
 
 > **Food for thought**
@@ -203,22 +204,22 @@ the source file will no longer exist.
 
 To answer the questions above, we need to consider what a variable _really_ is.  We will cover this in a later section.
 
-In a move, the value stored at the memory location of the RHS is copied over to the LHS, and then the memory for the RHS
-is deleted. In rust's case, the drop doesn't actually happen until the end of the scope, whereas in mojo it's as soon as 
-the variable is no longer used anymore...even within the same scope.  This has a couple of advantages for mojo compared 
+In a move, the value stored at the memory location of the RHS is copied over to the LHS, and then the memory for the RHS  
+is deleted. In rust's case, the drop doesn't actually happen until the end of the scope, whereas in mojo it's as soon as  
+the variable is no longer used anymore...even within the same scope.  This has a couple of advantages for mojo compared  
 to rust by eliminating the need for [dynamic drop flags](https://doc.rust-lang.org/nomicon/drop-flags.html).
 
-But what about references?  Currently, mojo doesn't have explicit references.  They do have `ref` and `mut ref` as
-reserved keywords, but they are still working on fleshing out their lifetime system.  That being said, whenever you pass
-a variable into a function, by default, it's being passed in as an immutable reference (the data is neither being copied
-nor moved into the function).  Unless a parameter is marked with `inout`, so that it is a mutable reference, or with the
+But what about references?  Currently, mojo doesn't have explicit references.  They do have `ref` and `mut ref` as  
+reserved keywords, but they are still working on fleshing out their lifetime system.  That being said, whenever you pass  
+a variable into a function, by default, it's being passed in as an immutable reference (the data is neither being copied  
+nor moved into the function).  Unless a parameter is marked with `inout`, so that it is a mutable reference, or with the  
 `owned` prefix, so that the variable itself is moved, the argument is passed in by immutable reference.
 
 > **But Why?**
 >
-> The reason mojo choose this as the default, is that they believe this is the more common scenario, and it (somewhat)
-> dovetails with how pythonistas program.  Since everything is an object (lives on the heap) in python, everything in 
-> python is passed by reference.  Whether it is a mutable or immutable reference depends on the type in python.
+> The reason mojo choose this as the default, is that they believe this is the more common scenario, and it (somewhat)  
+> dovetails with how pythonistas program.  Since everything is an object (lives on the heap) in python, everything in  
+> python is passed by reference.  Whether it is a mutable or immutable reference depends on the type in python.  
 
 In rust, it defaults to move semantics, and therefore pass by value.
 
@@ -231,9 +232,9 @@ First off ask yourself
 - Or conversely, always directly update the value itself through a mutable reference instead of a copy (as python does)?
 - And why a move if we can just copy? What good does transferring data do?
 
-Some of the answers to those questions requires an understanding of memory, and the performance characteristics of
-accessing the values stored in memory.  If copies were cheap, then it probably would make sense to always make a copy,
-unless your goal was to make the change visible somewhere else (ie, in another thread). But copying is not always cheap.
+Some of the answers to those questions requires an understanding of memory, and the performance characteristics of  
+accessing the values stored in memory.  If copies were cheap, then it probably would make sense to always make a copy,  
+unless your goal was to make the change visible somewhere else (ie, in another thread). But copying is not always cheap.  
 
 > Dynamism's performance cost
 >
@@ -246,34 +247,34 @@ unless your goal was to make the change visible somewhere else (ie, in another t
 > In python, a class can have methods and fields dynamically added, removed, or changed at runtime.  The _raison d'etre_
 > of mojo `fn` and `struct` as equivalents of python's `def` and `class` is to remove this dynamism.
 
-What about _moves_?  Rust makes it central to the language, because its affine type system requires it.  So it must be
-better than copying right?  Moving data has benefits to compiler analysis, because it means the other variable no longer
-exists.  The affine type system guarantees that a variable is used _at most once_ (related to _linear type system_ which
-guarantees that a type will be used _exactly once_).  In order to be used more than once (used, meaning passed to a
+What about _moves_?  Rust makes it central to the language, because its affine type system requires it.  So it must be  
+better than copying right?  Moving data has benefits to compiler analysis, because it means the other variable no longer  
+exists.  The affine type system guarantees that a variable is used _at most once_ (related to _linear type system_ which  
+guarantees that a type will be used _exactly once_).  In order to be used more than once (used, meaning passed to a  
 function, or assignments), requires a reference to the variable, and not the variable itself.
 
-However, moves, like copy, will (usually) require transfer of data from one memory location to another and will always
-require (at some point) calling the memory destructor to free up the memory of the old now moved data. For stack
-allocated data, memory clean up is cheap (basically, just moving the register base and stack pointers) (TODO: verify
-this is still true, as new security features in processors may now zero out memory on the stack so that the old
-data can't be read either as a bug or an exploit which can happen if the processor just overwrites the stack frame
-by shifting the stack and base registers to point to the next stack frame), but not for heap allocated data. Any time 
+However, moves, like copy, will (usually) require transfer of data from one memory location to another and will always  
+require (at some point) calling the memory destructor to free up the memory of the old now moved data. For stack  
+allocated data, memory clean up is cheap (basically, just moving the register base and stack pointers) (TODO: verify  
+this is still true, as new security features in processors may now zero out memory on the stack so that the old  
+data can't be read either as a bug or an exploit which can happen if the processor just overwrites the stack frame  
+by shifting the stack and base registers to point to the next stack frame), but not for heap allocated data. Any time  
 data is transferred, it triggers a cascade of operating system syscalls and hardware events that cost time.
 
 So let's dive in, and consider what a variable really is under the hood.
 
 ### A variable's multiple identities
 
-All of the above is to show that memory is a severe bottleneck to performance, and it's a reason why it's good to know
+All of the above is to show that memory is a severe bottleneck to performance, and it's a reason why it's good to know  
 why there are copies, moves, and references in the first place.
 
-This is not specific to mojo, but is required understanding nevertheless.  This knowledge will help in understanding how
-and why copy and move constructors may or may not be needed in low-level system's programming languages such as mojo, 
+This is not specific to mojo, but is required understanding nevertheless.  This knowledge will help in understanding how  
+and why copy and move constructors may or may not be needed in low-level system's programming languages such as mojo,  
 rust, or C++.
 
-Typically, in high level languages, when we think of a variable, we only think about the data that it represents.  The
-variable **is** the data is how we tend to think of it.  But sometimes, this way of thinking gets us in trouble.  A 
-variable is really: a name, which points to some memory, and that memory holds some value(s).
+Typically, in high level languages, when we think of a variable, we only think about the data that it represents.  The  
+variable **is** the data is how we tend to think of it.  But sometimes, this way of thinking gets us in trouble.  A  
+variable is really: a name, which points to some memory, and that memory holds some value(s).  
 
 So, let's break up that statement into its discrete parts:
 
@@ -322,31 +323,31 @@ So, let's break up that statement into its discrete parts:
         - a pointer referencing another address in memory (whose value could hold another indirection recursively)
         - a register value (it actually gets passed directly to a register rather than the stack)
 
-So as we can see, it's more complicated in mojo.  But that's how mojo and other system languages are faster, because
-they don't always have to reach out to memory (a reference) to retrieve the actual value.  In mojo's case, unlike rust,
-it actually has the power to directly store a variable into a register through the @register_passable decorator (in rust
-, you would need to inline assembly to do that). This means that some familiarity with the stack and the heap are 
-somewhat required (even moreso than rust, because currently, in order to create a list or vector data type in mojo, you
+So as we can see, it's more complicated in mojo.  But that's how mojo and other system languages are faster, because  
+they don't always have to reach out to memory (a reference) to retrieve the actual value.  In mojo's case, unlike rust,  
+it actually has the power to directly store a variable into a register through the @register_passable decorator (in rust  
+, you would need to inline assembly to do that). This means that some familiarity with the stack and the heap are  
+somewhat required (even moreso than rust, because currently, in order to create a list or vector data type in mojo, you  
 currently need to roll your own through pointer semantics).
 
 ### The Copy Constructor: __copyinit__
 
-Technically, mojo doesn't use the terms copy constructor or move constructor (like C++ does), but it may be helpful to
+Technically, mojo doesn't use the terms copy constructor or move constructor (like C++ does), but it may be helpful to  
 think of `__copyinit__` as constructing a "new" value.  I put "new" in quotes, because the implementation of
-`__copyinit__` (that you yourself define in your own structs) might simply increment a ref count and make the 
-new value a reference to an existing value (which is much more performant than allocating a block of memory the size
-of the RHS type, and inserting copies of values into the new memory).  Or, the implementation could do a value-wise
-deep copy from the RHS object to the LHS
+`__copyinit__` (that you yourself define in your own structs) might simply increment a ref count and make the new value  
+a reference to an existing value (which is much more performant than allocating a block of memory the size of the RHS  
+type, and inserting copies of values into the new memory).  Or, the implementation could do a value-wise deep copy from  
+the RHS object to the LHS
 
 > Rust Copy vs Clone
 >
-> If you are familiar with rust, rust makes a distinction between Copy and Clone (where Clone is a subtype of Copy)
-> In rust, a Copy type is meant for data types that are mainly direct values and don't have any references inside
-> the data type.  This makes them cheap to create new values.  A Clone type is meant for data types that have
-> references, ie, data that lives in the heap.  Creating a clone is therefore more expensive.  Part of the rationale
-> for the difference is that rust _must_ be able to _move_ values in function passing or assignment, and a type
-> implementing the Copy trait determines whether the RHS still exists or after assignment or passed to a function
-> not as a reference (eg `foo(&some_var)`)
+> If you are familiar with rust, rust makes a distinction between Copy and Clone (where Clone is a subtype of Copy) In  
+> rust, a Copy type is meant for data types that are mainly direct values and don't have any references inside the data  
+> type.  This makes them cheap to create new values.  A Clone type is meant for data types that have references, ie,  
+> data that lives in the heap.  Creating a clone is therefore more expensive.  Part of the rationale for the difference  
+> is that rust _must_ be able to _move_ values in function passing or assignment, and a type implementing the Copy trait  
+> determines whether the RHS still exists or after assignment or passed to a function not as a reference (eg
+> `foo(&some_var)`)
 >
 > Mojo does not make this distinction with the `__copyinit__` method.  You can choose to do something like Rust's
 > Copy or Clone, though rust's distinction is useful.
@@ -366,14 +367,14 @@ data["x"] = 20  # stop for a second and ask yourself, do i need _data_ anymore?
 new_data["x"]
 ```
 
-In the rust language, after `new_data` was assigned the value of data, data is no longer accessible.  It's _value_ was
-moved (effectively the name lookup of `data` is no longer bound).  In python, as you can see, the `data` variable is
-still alive and well.  But if you think about it, why do we need to keep `data` around?  After all, didn't I just copy
+In the rust language, after `new_data` was assigned the value of data, data is no longer accessible.  It's _value_ was  
+moved (effectively the name lookup of `data` is no longer bound).  In python, as you can see, the `data` variable is  
+still alive and well.  But if you think about it, why do we need to keep `data` around?  After all, didn't I just copy  
 over its values to `new_data`?
 
-Actually no, the _value_ of `data` was not copied over.  Python just made `new_data` map to the same address that 
-`data` was pointing to, and incremented the ref count.  Any changes to `data` happen in `new_data` and vice-versa.
-Sometimes, this is what you want.  But sometimes, you want a brand new copy of the _value_.  This way I can make changes
+Actually no, the _value_ of `data` was not copied over.  Python just made `new_data` map to the same address that   
+`data` was pointing to, and incremented the ref count.  Any changes to `data` happen in `new_data` and vice-versa.  
+Sometimes, this is what you want.  But sometimes, you want a brand new copy of the _value_.  This way I can make changes  
 to `new_data` without it changing `data` also.
 
 In python you would do this:

@@ -101,6 +101,7 @@ class Iter(Generic[T], Functor[T]):
             raise Exception("num arg must be >= 1")
         return Iter(inner=(i for ind, i in enumerate(self.inner) if ind < num))
 
+print(f"{__name__}")
 
 if __name__ == "__main__":
     def doubler(x: int) -> int | None:
