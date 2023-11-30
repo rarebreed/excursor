@@ -25,8 +25,9 @@ jupyterlab = {version = "^4.0", optional = true}
 
 # If you are on linux, uncomment the torch line below
 #torch = {version = "^2.0.1+cpu", optional = true, source = "pytorch"}
+torch = {version = "^2.1.1", optional = true}
 # If you are not on a mac, comment this line out
-#torch = {version = "^2.1.1", optional = true, source = "pytorch"}
+# torch = {version = "^2.1.1", optional = true, source = "pytorch"}
 
 # data: tools for data analytics, cleaning and ops
 # polars = {extras = ["numpy", "pandas", "pyarrow"], version = "^0.18.4", optional = true}
@@ -53,11 +54,11 @@ data = ["polars", "pyarrow", "duckdb"]
 py-dev = {callable = "excursor.core.installer:main"}
 py-dev39 = {callable = "excursor.core.installer_39:main"}
 
-[[tool.poetry.source]]
-name = "pytorch"
-# url = "https://download.pytorch.org/whl/cpu"
-url = "https://download.pytorch.org/whl/cu121"
-priority = "supplemental"
+# [[tool.poetry.source]]
+# name = "pytorch"
+# # url = "https://download.pytorch.org/whl/cpu"
+# url = "https://download.pytorch.org/whl/cu121"
+# priority = "supplemental"
 
 [build-system]
 requires = ["poetry-core"]
