@@ -44,7 +44,7 @@ class Run:
         else:
             return self._run_exec(pw=pw)
 
-    async def run(self, *, pw: str | None = None, throw=True) -> tuple[Self, Process]:
+    async def run(self, *, pw: str | None = None, throw: bool =True) -> tuple[Self, Process]:
         proc = await self(pw=pw)
         if throw and proc.returncode != 0:
             raise Exception(f"Process failed with exit code {proc.returncode}")
