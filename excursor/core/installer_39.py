@@ -62,7 +62,7 @@ class Installer(ABC):
             flags = []
         elif isinstance(flags, str):
             flags = flags.split(" ")
-        elif isinstance(flags, list):
+        else:
             ...
         flags_str = " ".join(f"{f}" for f in flags)
         extra_cmds = " ".join(f"--{k} {v}" for k, v in extras.items())
@@ -252,15 +252,13 @@ class PythonDevel:
 
     async def _install_sysdeps(self):
         """Install system deps"""
-        if self.sys_installer.distro == "linux":
-            pass
 
         flags = "-y"
         if self.sys_installer.manager == "brew":
             flags = None
 
         _, proc = await self.sys_installer.install(self.devel_libs, pw=self.pw, flags=flags)
-        if self.sys_installer.distro == "macos":
+        if self.sys_installer.distro == "mac":
             which = Run("xocde-select --version")
             _, proc = await which.run(throw=False)
             if proc.returncode != 0:
@@ -376,7 +374,7 @@ class PythonDevel:
             if self.sys_installer.os == "mac":
                 print("reactivate your virtual env")
 
-    async def _create_venv(self, name="venv"):
+    async def _create_venv(self, name: str ="venv"):
         self._check_venv()
         env = self.set_asdf_path()
         await Run("pipx install virtualenv", env=env).run()
@@ -423,12 +421,12 @@ class PythonDevel:
             if self.sys_installer.os == "mac":
                 print("reactivate your virtual env")
 
-    async def _uninstall_venv(self, name="venv"):
+    async def _uninstall_venv(self, name: str ="venv"):
         self._check_venv()
         env = self.set_asdf_path()
         await Run("pipx uninstall virtualenv", env=env).run()
 
-        sh, proc = await Run("which virtualenv").run()
+        sh, _= await Run("which virtualenv").run()
         print(sh.output)
 
 
