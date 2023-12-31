@@ -76,7 +76,7 @@ class Maybe(Generic[T], Functor[T]):
                     case _:
                         return result
 
-    def do(self, fn: Callable[[T], T]) -> Self:
+    def do(self, fn: Callable[[T], T]) -> "Maybe[T]":
         match self.inner:
             case None:
                 return Maybe(inner=None)
