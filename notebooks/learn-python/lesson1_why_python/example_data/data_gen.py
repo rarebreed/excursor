@@ -37,6 +37,8 @@ def make_test_result(days_ago: int, hours: int):
             exception = exceptions[randint(0, 1)]
         case "fail":
             fail_msg = fail_messages[randint(0, 1)]
+        case _:
+            ...
 
     duration = random() * 60
     ymd_hms = executed_on.strftime("%Y-%m-%d-%H-%M-%S")
@@ -57,9 +59,9 @@ def make_suite():
     with open("test-runs.ndjson", "w") as test_f:
         for t in range(100):
             hours = randint(0, 24)
-            test_results = {tests[randint(0, 3)]: make_test_result(t, hours) for i in range(5)}
+            test_results = {tests[randint(0, 3)]: make_test_result(t, hours) for _ in range(5)}
             suite = TestSuite(tests=test_results)
-            test_f.write(suite.json() + "\n")
+            test_f.write(suite.model_dump_json() + "\n")
 
 
 if __name__ == "__main__":

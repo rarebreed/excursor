@@ -24,7 +24,7 @@ import platform
 import shutil
 import subprocess
 import sys
-from typing import Literal, TypeAlias
+from typing import Any, Literal, TypeAlias
 
 from excursor.core.process import Run
 
@@ -45,7 +45,11 @@ class Installer(ABC):
     update_cmd: str = "update"
     upgrade_cmd: str = "upgrade"
 
-    def extras(self, flags: str | list[str] | None, **extras: dict[str, str]) -> str:
+    def extras(
+        self,
+        flags: str | list[str] | None,
+        **extras: str
+    ) -> str:
         """Additional flags (optional args) and extra dict that will be added to a command
 
         Parameters
@@ -81,7 +85,7 @@ class Installer(ABC):
         *,
         pw: str | None = None,
         flags: str | list[str] | None = None,
-        **extras: dict[str, str]
+        **extras: str
     ) -> tuple[Run, Process]:
         extra_args = self.extras(flags, **extras)
         install = f"{'sudo ' if pw else ''}{self.manager} {self.install_cmd} {extra_args} {' '.join(pkgs)}"
@@ -96,7 +100,7 @@ class Installer(ABC):
         *,
         pw: str | None = None,
         flags: str | list[str] | None = None,
-        **extras
+        **extras: str
     ) -> tuple[Run, Process]:
         extra_args = self.extras(flags, **extras)
         uninstall = f"{'sudo' if pw else ''}{self.manager} {self.uninstall_cmd} {extra_args} {' '.join(pkgs)}"
@@ -111,7 +115,7 @@ class Installer(ABC):
         *,
         pw: str | None = None,
         flags: str | list[str] | None = None,
-        **extras
+        **extras: str
     ) -> tuple[Run, Process]:
         extra_args = self.extras(flags, **extras)
         install = f"{'sudo' if pw else ''}{self.manager} {self.update_cmd} {extra_args} {' '.join(pkgs)}"
@@ -160,6 +164,8 @@ class SysInstaller(Installer):
             case "mac":
                 self.distro = "mac"
                 self.manager = "brew"
+            case unknown:
+                raise Exception(f"{unknown} is not supported yet")
         print(f"On {self.distro} using {self.manager}")
 
     def get_system(self):
@@ -240,6 +246,8 @@ class PythonDevel:
                 ]
             case "mac":
                 self.devel_libs = ["openssl", "readline", "sqlite3", "xz", "zlib", "tcl-tk"]
+            case other:
+                raise Exception(f"{other} is not supported yet")
 
     async def shell(self) -> str:
         """Determine default shell type"""
@@ -251,17 +259,14 @@ class PythonDevel:
         runner, proc = await Run(f"which {prog}").run(throw=False)
         return runner.output, proc.returncode
 
-    async def _install_sysdeps(self):
+    async def install_sysdeps(self):
         """Install system deps"""
-        if self.sys_installer.distro == "linux":
-            pass
-
         flags = "-y"
         if self.sys_installer.manager == "brew":
             flags = None
 
         _, proc = await self.sys_installer.install(self.devel_libs, pw=self.pw, flags=flags)
-        if self.sys_installer.distro == "macos":
+        if self.sys_installer.distro == "mac":
             which = Run("xocde-select --version")
             _, proc = await which.run(throw=False)
             if proc.returncode != 0:
@@ -284,13 +289,13 @@ class PythonDevel:
         print(f"PATH is now {env['PATH']}")
         return env
 
-    async def _uninstall_asdf(self):
+    async def uninstall_asdf(self):
         asdf_home = Path.home() / ".asdf"
         if asdf_home.exists():
             print(f"Deleting old {asdf_home}")
             shutil.rmtree(asdf_home)
 
-            new_zsh = []
+            new_zsh: list[str] = []
             zshrc_f = Path.home() / ".zshrc"
             zshrc_bak_f = Path.home() / ".zshrc.bak"
             print("editing .zshrc file")
@@ -317,9 +322,9 @@ class PythonDevel:
 
         print("Please run `source ~/.zshrc` to configure your shell")
 
-    async def _install_asdf(self):
+    async def install_asdf(self):
         """Install asdf"""
-        await self._uninstall_asdf()
+        await self.uninstall_asdf()
 
         asdf = Run("git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.13.0")
         await asdf()
@@ -367,7 +372,7 @@ class PythonDevel:
             print("Run the command `deactivate` in your shell and rerun")
             sys.exit(0)
 
-    async def _install_poetry(self):
+    async def install_poetry(self):
         self._check_venv()
 
         _, proc = await Run("poetry -V").run(throw=False)
@@ -386,10 +391,9 @@ class PythonDevel:
             subprocess.call(["sh", "/tmp/poetry.sh"])
         else:
             await Run("curl -sSL https://install.python-poetry.org | python3 -").run()
-            if self.sys_installer.os == "mac":
-                print("reactivate your virtual env")
+            print("reactivate your virtual env")
 
-    async def _create_venv(self, name="venv"):
+    async def create_venv(self, name: str = "venv"):
         self._check_venv()
         env = self.set_asdf_path()
         await Run("pipx install virtualenv", env=env).run()
@@ -410,10 +414,10 @@ class PythonDevel:
                 for pkg in PyProjectPkgs[key]:
                     await Run(cmd).run()
 
-    async def _uninstall_sysdeps(self):
+    async def uninstall_sysdeps(self):
         print("Uninstalling sys dependencies is not supported")
 
-    async def _uninstall_poetry(self):
+    async def uninstall_poetry(self):
         self._check_venv()
 
         _, proc = await Run("poetry -V").run(throw=False)
@@ -432,10 +436,9 @@ class PythonDevel:
             subprocess.call(["sh", "/tmp/poetry.sh"])
         else:
             await Run("curl -sSL https://install.python-poetry.org | python3 - --uninstall").run()
-            if self.sys_installer.os == "mac":
-                print("reactivate your virtual env")
+            print("reactivate your virtual env")
 
-    async def _uninstall_venv(self, name="venv"):
+    async def uninstall_venv(self, name: str = "venv"):
         self._check_venv()
         env = self.set_asdf_path()
         await Run("pipx uninstall virtualenv", env=env).run(throw=False)
@@ -447,27 +450,27 @@ class PythonDevel:
 def install(clean: bool, options: list[str]):
     pd = PythonDevel()
     # Determine which parts to do.  First, reduce to a set.  Next, order my the value
-    actions = []
+    actions: list[Any] = []
 
     # Clean operations should be in reverse order of installs
     if clean:
         if "venv" in options:
-            actions.append(pd._uninstall_venv)
+            actions.append(pd.uninstall_venv)
         if "poetry" in options:
-            actions.append(pd._uninstall_poetry)
+            actions.append(pd.uninstall_poetry)
         if "asdf" in options:
-            actions.append(pd._uninstall_asdf)
+            actions.append(pd.uninstall_asdf)
         if "sys" in options:
-            actions.append(pd._uninstall_sysdeps)
+            actions.append(pd.uninstall_sysdeps)
     else:
         if "sys" in options:
-            actions.append(pd._install_sysdeps)
+            actions.append(pd.install_sysdeps)
         if "asdf" in options:
-            actions.append(pd._install_asdf)
+            actions.append(pd.install_asdf)
         if "poetry" in options:
-            actions.append(pd._install_poetry)
+            actions.append(pd.install_poetry)
         if "venv" in options:
-            actions.append(pd._create_venv)
+            actions.append(pd.create_venv)
 
     with asyncio.Runner() as runner:
         for fn in actions:
