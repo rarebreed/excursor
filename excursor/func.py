@@ -1,18 +1,17 @@
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 import asyncio
 from dataclasses import dataclass
-from typing import Callable, Coroutine, Generic, Iterable, Self, TypeAlias, TypeVar
+from typing import Callable, Coroutine, Generic, Iterable, Protocol, TypeAlias, TypeVar
 
 
-T = TypeVar("T")
+T = TypeVar("T", covariant=True)
 R = TypeVar("R")
 
 MaybeT: TypeAlias = T | None
 
 
-class Functor(ABC, Generic[T]):
-    inner: T
+class Functor(Protocol, Generic[T]):
 
     @abstractmethod
     def map(self, fun: Callable[[T], R]) -> "Functor[R]":
@@ -41,13 +40,13 @@ class Maybe(Generic[T], Functor[T]):
                 return Maybe(None)
             case inner:
                 result = fun(inner)
-                match result:
+                match result.inner:
                     case None:
                         return Maybe(inner=None)
                     case _:
                         return result
 
-    def map_async(self, fn: Callable[[T], Coroutine[None, None, R]]) -> "Maybe[R]":
+    def map_async(self, fn: Callable[[T], Coroutine[None, None, R | None]]) -> "Maybe[R]":
         match self.inner:
             case None:
                 return Maybe(inner=None)
@@ -69,10 +68,9 @@ class Maybe(Generic[T], Functor[T]):
                 # In order to figure out what the inner Maybe type is, we need to await
                 with asyncio.Runner() as runner:
                     result = runner.run(fn(inner))
-                match result:
+                match result.inner:
                     case None:
-                        maybe = Maybe(inner=None)
-                        return maybe
+                        return Maybe(inner=None)
                     case _:
                         return result
 

@@ -12,8 +12,8 @@ def test_sys_installer():
 @pytest.mark.asyncio
 async def test_py_devel():
     pd = PythonDevel()
-    extras = pd.sys_installer.extras("-y", foo="bar")
-    assert extras == "-y --foo bar"
+    extras = pd.sys_installer.extras("-y", foo="bar", baz="10")
+    assert extras == "-y --foo bar --baz 10"
 
-    proc = await pd.sys_installer.install(pd.devel_libs, flags="-y")
+    _, proc = await pd.sys_installer.install(pd.devel_libs, flags="-y")
     assert proc.returncode == 0

@@ -4,7 +4,7 @@
 import asyncio
 from asyncio.subprocess import Process
 from dataclasses import dataclass, field
-from os import _Environ
+from os import _Environ  # type: ignore
 from pathlib import Path
 from subprocess import PIPE
 from typing import IO, Any, Literal, Optional, Union
@@ -39,7 +39,7 @@ class Run:
         else:
             return self._run_exec(pw=pw)
 
-    async def run(self, *, pw: Union[str, None] = None, throw: bool =True) -> tuple["Run", Process]:
+    async def run(self, *, pw: Union[str, None] = None, throw: bool = True) -> tuple["Run", Process]:
         proc = await self(pw=pw)
         if throw and proc.returncode != 0:
             raise Exception(f"Process failed with exit code {proc.returncode}")
