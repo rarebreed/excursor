@@ -2,27 +2,25 @@
 from abc import abstractmethod
 import asyncio
 from dataclasses import dataclass
-from typing import Callable, Coroutine, Generic, Iterable, Protocol, TypeAlias, TypeVar
+from typing import Callable, Coroutine, Iterable, Protocol
 
 
-T = TypeVar("T", covariant=True)
-R = TypeVar("R")
-
-MaybeT: TypeAlias = T | None
+class MaybeT[T]:
+    inner: T | None
 
 
-class Functor(Protocol, Generic[T]):
+class Functor[T](Protocol):
 
     @abstractmethod
-    def map(self, fun: Callable[[T], R]) -> "Functor[R]":
+    def map[R](self, fun: Callable[[T], R]) -> "Functor[R]":
         ...
 
 
 @dataclass
-class Maybe(Generic[T], Functor[T]):
+class Maybe[T](Functor[T]):
     inner: T | None
 
-    def map(self, fun: Callable[[T], R | None]) -> "Maybe[R]":
+    def map[R](self, fun: Callable[[T], R | None]) -> "Maybe[R]":
         match self.inner:
             case None:
                 return Maybe(inner=None)
@@ -34,7 +32,7 @@ class Maybe(Generic[T], Functor[T]):
                     case res:
                         return Maybe(inner=res)
 
-    def flat_map(self, fun: Callable[[T], "Maybe[R]"]) -> "Maybe[R]":
+    def flat_map[R](self, fun: Callable[[T], "Maybe[R]"]) -> "Maybe[R]":
         match self.inner:
             case None:
                 return Maybe(None)
@@ -46,7 +44,7 @@ class Maybe(Generic[T], Functor[T]):
                     case _:
                         return result
 
-    def map_async(self, fn: Callable[[T], Coroutine[None, None, R | None]]) -> "Maybe[R]":
+    def map_async[R](self, fn: Callable[[T], Coroutine[None, None, R | None]]) -> "Maybe[R]":
         match self.inner:
             case None:
                 return Maybe(inner=None)
@@ -59,7 +57,7 @@ class Maybe(Generic[T], Functor[T]):
                     case res:
                         return Maybe(inner=res)
 
-    def flat_map_async(self, fn: Callable[[T], Coroutine[None, None, "Maybe[R]"]]) -> "Maybe[R]":
+    def flat_map_async[R](self, fn: Callable[[T], Coroutine[None, None, "Maybe[R]"]]) -> "Maybe[R]":
         """"""
         match self.inner:
             case None:
@@ -84,20 +82,21 @@ class Maybe(Generic[T], Functor[T]):
 
 
 @dataclass
-class Iter(Generic[T], Functor[T]):
+class Iter[T](Functor[T]):
     inner: Iterable[T]
     # g: Generator[T, Any, None] = field(init=False, repr=False)
 
     def __post_init__(self):
         self.inner = (item for item in self.inner)
 
-    def map(self, fun: Callable[[T], R]) -> "Iter[R]":
+    def map[R](self, fun: Callable[[T], R]) -> "Iter[R]":
         return Iter(inner=(fun(x) for x in self.inner))
 
     def take(self, num: int):
         if num < 1:
             raise Exception("num arg must be >= 1")
         return Iter(inner=(i for ind, i in enumerate(self.inner) if ind < num))
+
 
 print(f"{__name__}")
 

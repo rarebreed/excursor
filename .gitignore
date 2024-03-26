@@ -7,4 +7,6 @@ venv/
 .ruff_cache/
 .tool-versions
 
-dist/
+dist/# pixi environments
+.pixi
+

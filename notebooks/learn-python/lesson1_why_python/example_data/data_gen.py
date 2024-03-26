@@ -42,7 +42,7 @@ def make_test_result(days_ago: int, hours: int):
 
     duration = random() * 60
     ymd_hms = executed_on.strftime("%Y-%m-%d-%H-%M-%S")
-    data_path = f"s3://my-bucket/test_results/{ymd_hms}.json"
+    data_path = f"s3: //my-bucket/test_results/{ymd_hms}.json"
 
     return TestResult(
         executed_on=executed_on,

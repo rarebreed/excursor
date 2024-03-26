@@ -7,9 +7,10 @@ readme = "README.md"
 license = "Apache-2.0"
 
 [tool.poetry.dependencies]
-python = ">=3.9, <3.13"
+python = "^3.12"
 numpy = "^1.26"
 sympy = "^1.12"
+daak = "^0.1.1"
 
 # serve: service deps
 httpx = {version = "^0.24", optional = true}
@@ -17,24 +18,25 @@ fastapi = {version = "^0.101.1", optional = true}
 uvicorn = {extras = ["standard"], version = "^0.23.2", optional = true}
 pydantic = {version = "^2.4", optional = true}
 
-
 # viz: visualization including jupyter
 ipywidgets = {version = "^8.0", optional = true}
 jupyterlab = {version = "^4.0", optional = true}
+ipykernel = "^6.29.0"
+
+# viz
+holoviews = {extras = ["recommended"], version = "^1.18.1", optional = true}
+plotly = {version = "^5.18.0", optional = true}
+matplotlib = {version = "^3.8.3", optional = true}
+seaborn = {version = "^0.13.2", optional = true}
 
 # If you are on linux, uncomment the torch line below
 #torch = {version = "^2.0.1+cpu", optional = true, source = "pytorch"}
-torch = {version = "^2.1.1+cpu", optional = true}
+torch = {version = "^2.2.1+cpu", optional = true}
 # If you are not on a mac, comment this line out
 
 # data: tools for data analytics, cleaning and ops
 polars = {extras = ["numpy", "pandas", "pyarrow"], version = "^0.20.5", optional = true}
-pyarrow = {version = "^14.0.0", optional = true}
-duckdb = {version = "^0.9.0", optional = true}
-daak = "^0.1.1"
-ipykernel = "^6.29.0"
-holoviews = {extras = ["recommended"], version = "^1.18.1"}
-
+pyarrow = {version = "^15.0.0", optional = true}
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.0.286"
@@ -44,7 +46,7 @@ pycodestyle = "2.10.0"
 pytest-asyncio = "^0.21.1"
 
 [tool.poetry.extras]
-viz = ["ipywidgets", "jupyterlab"]
+viz = ["ipywidgets", "jupyterlab", "plotly", "holoviews", "matplotlib", "seaborn"]
 ml = ["torch"]
 serve = ["httpx", "fastapi", "uvicorn", "pydantic"]
 data = ["polars", "pyarrow", "duckdb"]

@@ -278,14 +278,14 @@ class PythonDevel:
         # so let's manually add them
         asdf_path = Path.home() / ".asdf"
         env = os.environ
-        env["PATH"] = f"{asdf_path}/shims:{asdf_path}/bin:" + os.environ["PATH"]
+        env["PATH"] = f"{asdf_path}/shims: {asdf_path}/bin: " + os.environ["PATH"]
         print(f"PATH is now {env['PATH']}")
         return env
 
     def set_local_path(self):
         local_path = Path.home() / ".local"
         env = os.environ
-        env["PATH"] = f"{local_path}/bin:" + os.environ["PATH"]
+        env["PATH"] = f"{local_path}/bin: " + os.environ["PATH"]
         print(f"PATH is now {env['PATH']}")
         return env
 
