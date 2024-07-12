@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Add a short description here"
 authors = ["Sean Toner <placeoftheway@gmail.com>"]
 channels = ["conda-forge"]
-platforms = ["win-64"]
+platforms = ["win-64", "linux-64"]
 
 [tasks]
 
@@ -19,8 +19,10 @@ pydantic = ">=2.6.4,<2.7"
 ipywidgets = ">=8.1.2,<8.2"
 jupyterlab = ">=4.1.5,<4.2"
 holoviews = ">=1.18.3,<1.19"
-
+pytest = "*"
+ruff = "*"
+autopep8 = "*"
+pytest-asyncio = "*"
 
 [pypi-dependencies]
 daak = "*"
-
