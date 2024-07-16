@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Add a short description here"
 authors = ["Sean Toner <placeoftheway@gmail.com>"]
 channels = ["conda-forge"]
-platforms = ["win-64"]
+platforms = ["win-64", "linux-64", "osx-arm64"]
 
 [tasks]
 
@@ -13,14 +13,16 @@ python = ">=3.12.2,<3.13"
 numpy = ">=1.26.4,<1.27"
 sympy = ">=1.12,<2"
 httpx = ">=0.27.0,<0.28"
-fastapi = ">=0.103.0,<0.104"
+fastapi = ">=0.111.0,<0.112"
 uvicorn = ">=0.29.0,<0.30"
-pydantic = ">=2.6.4,<2.7"
+pydantic = ">=2.7.4,<2.8"
 ipywidgets = ">=8.1.2,<8.2"
 jupyterlab = ">=4.1.5,<4.2"
 holoviews = ">=1.18.3,<1.19"
+pytest = ">=8.2.2,<8.3"
 
 
 [pypi-dependencies]
 daak = "*"
+getdaft = { version = "*", extras = ["aws"] }
 
