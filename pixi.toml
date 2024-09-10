@@ -3,12 +3,21 @@ name = "excursor"
 version = "0.1.0"
 description = "Add a short description here"
 authors = ["Sean Toner <placeoftheway@gmail.com>"]
-channels = ["conda-forge"]
-platforms = ["win-64", "linux-64", "osx-arm64"]
+channels = ["nvidia", "pytorch", "conda-forge"]
+platforms = ["win-64", "linux-64"]
 
 [tasks]
 fmt = "autopep8 -i ."
 lint = "ruff check . --fix"
+test = "pytest tests -rA -s"
+check = {depends-on = ["fmt", "lint", "test"]}
+git-add = "git add ."
+commit = {cmd = "git commit -m ", depends-on = ["check", "git-add"]}
+push = "git push origin "
+
+[pypi-options]
+index-url = "https://pypi.python.org/simple"
+extra-index-urls = ["https://download.pytorch.org/whl/cu124"]
 
 [dependencies]
 python = ">=3.12.2,<3.13"
@@ -18,15 +27,20 @@ httpx = ">=0.27.0,<0.28"
 fastapi = ">=0.111.0,<0.112"
 uvicorn = ">=0.29.0,<0.30"
 pydantic = ">=2.7.4,<2.8"
-ipywidgets = ">=8.1.2,<8.2"
-jupyterlab = ">=4.1.5,<4.2"
-holoviews = ">=1.18.3,<1.19"
 pytest = ">=8.2.2,<8.3"
 autopep8 = ">=2.3.1,<3"
 ruff = ">=0.6.2,<0.7"
+jupyterlab = ">=4.2.4,<5"
+ipywidgets = ">=8.1.5,<9"
+pytorch = ">=2.4.0,<3"
+pytorch-cuda = "12.4.*"
+transformers = ">=4.44.2,<5"
+tqdm = ">=4.66.5,<5"
 
 
 [pypi-dependencies]
 daak = "*"
 getdaft = { version = "*", extras = ["aws"] }
+chardet = ">=5.2.0, <6"
+pyyaml = "*"
 

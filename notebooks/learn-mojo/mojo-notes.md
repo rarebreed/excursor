@@ -7,6 +7,12 @@ There will also be frequent comparisons to python, since mojo aims to be a super
 should know python as well.  However, this is also not strictly necessary, and overtime, I will write the document to
 teach both python and mojo basics as mojo gains more compatibility with python.
 
+> Mojo license UPDATE!!
+> 
+> Sadly, mojo is using a community license that isn't truly open and leaves too much wiggle room for being considered
+> as competitive.  And like CUDA, at anytime, Modular can decide to make the license no longer free.  As a result, 
+> unless Modular switches to a different license, I can't recommend it anymore. 
+
 ## Some limitations to note in mojo
 
 While mojo aims to be a superset of python, it is not yet there.  Some current limitations are the following:
@@ -19,6 +25,9 @@ While mojo aims to be a superset of python, it is not yet there.  Some current l
 - Many limitations in the std lib
     - no builtin list or dict class
     - almost no IO
+- The Community License has restrictions on non-compete
+    - Don't use mojo in any PaaS, Saas, IaaS AI role
+    - Modular 
 
 ## Functions in Mojo
 
