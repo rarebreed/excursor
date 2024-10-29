@@ -3,51 +3,25 @@
 excursor means to scout or spy in latin.  excursor is a tool to learn python, mojo, and machine learning. It does so by
 building up some projects and notebooks to introduce concepts
 
-## Installing Prerequisites
+## Installing 
 
-excursor comes with an installer module to install the development tools that will be needed.  You will need at a 
-minimum the following installed:
+excursor uses pixi as its dependency manager, so the first thing to do is install pizi.  Go to their site at
 
-- git
-- python 3.9+
-- pip
+https://pixi.sh/latest/
 
-First, create a virtual environment
+and follow the directions according to your operating system.  For linux and mac, it will be simple;
 
 ```bash
-git clone https://github.com/rarebreed/excursor.git
-cd excursor
+curl -fsSL https://pixi.sh/install.sh | bash
 ```
 
-This will clone excursor on your system.  Then run the following commands:
+## Using with VS Code
 
-- Install python devel deps: `python3 -m excursor.core.installer sys`
-- Install asdf python manager: `python3 -m excursor.core.installer asdf`
-- Activate asdf: `source ~/.zshrc`
-- Install poetry project manager: `python3 -m excursor.core.installer poetry`
-- Install virtualenv: `python3 -m excursor.core.installer venv`
-- Optional (if you want python 3.9.x): `asdf install python 3.9.18`
-    - And to make it the default: `asdf global python 3.9.18`
+When opening a python file, you can select the python interpreter to use with `CTRL+SHIFT+P` and  then selcting the 
+`Python Select Interpreter` choice.  Then click the `Enter path` option and enetr the path to where pixi installed the
+default environment (or dev environment).
 
-You can also run the commands all at once, but on the first run through, it is recommended to install each one at a time
+> this should be in `.pixi\envs\default\python.exe` for windows or `.pixi/envs/default/python3` for linux and mac
 
-```bash
-python3 -m excursor.core.installer sys asdf poetry venv
-```
-
-Once all the features are installed, you can install the full excursor dependencies using `poetry`
-
-```bash
-poetry install --all-extras --with dev
-```
-
-Skip any of the commands above if you already have asdf, poetry, or virtualenv already installed.
-
-## Uninstalling a feature
-
-You can also uninstall a feature by appending with a `-c` or `--clean` at the end.  It is recommended to uninstall in
-the reverse order as above (eg, clean venv, then poetry, then asdf)
-
-```bash
-python3 -m excursor.core.installer venv poetry asdf -c
-```
+Do the same for the Jupyter notebooks.  Click on the `Select Kernel` then `Python Environments` then choose your python interpreter from pixi that was selected earlier.  If you don't see it listed, follow the directions above by opening a
+python file, and selecting the interpreter.
