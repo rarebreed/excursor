@@ -5,10 +5,6 @@ from dataclasses import dataclass
 from typing import Callable, Coroutine, Iterable, Protocol
 
 
-class MaybeT[T]:
-    inner: T | None
-
-
 class Functor[T](Protocol):
 
     @abstractmethod
