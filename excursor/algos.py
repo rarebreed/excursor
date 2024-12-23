@@ -5,19 +5,19 @@
 from random import randint
 
 
-def count(l: list, tot: int = 0) -> int:
-    if len(l) == 0:
+def count(arr: list, tot: int = 0) -> int:
+    if len(arr) == 0:
         return tot
     else:
         tot += 1
-        return count(l[1:], tot)
+        return count(arr[1:], tot)
 
 
-def max(l: list[int], m: int | None = None) -> int | None:
-    if len(l) == 0:
+def max(arr: list[int], m: int | None = None) -> int | None:
+    if len(arr) == 0:
         return m
     else:
-        head, *tail = l
+        head, *tail = arr
         if m is None:
             m = head
         elif head > m:
