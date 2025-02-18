@@ -21,24 +21,14 @@ class Maybe[T](Functor[T]):
             case None:
                 return Maybe(inner=None)
             case _:
-                result = fun(self.inner)
-                match result:
-                    case None:
-                        return Maybe(None)
-                    case res:
-                        return Maybe(inner=res)
+                return Maybe(inner=fun(self.inner))
 
     def flat_map[R](self, fun: Callable[[T], "Maybe[R]"]) -> "Maybe[R]":
         match self.inner:
             case None:
                 return Maybe(None)
             case inner:
-                result = fun(inner)
-                match result.inner:
-                    case None:
-                        return Maybe(inner=None)
-                    case _:
-                        return result
+                return fun(inner)
 
     def map_async[R](self, fn: Callable[[T], Coroutine[None, None, R | None]]) -> "Maybe[R]":
         match self.inner:
@@ -46,12 +36,7 @@ class Maybe[T](Functor[T]):
                 return Maybe(inner=None)
             case _:
                 with asyncio.Runner() as runner:
-                    result = runner.run(fn(self.inner))
-                match result:
-                    case None:
-                        return Maybe(None)
-                    case res:
-                        return Maybe(inner=res)
+                    return Maybe(inner=runner.run(fn(self.inner)))
 
     def flat_map_async[R](self, fn: Callable[[T], Coroutine[None, None, "Maybe[R]"]]) -> "Maybe[R]":
         """"""
@@ -61,12 +46,7 @@ class Maybe[T](Functor[T]):
             case inner:
                 # In order to figure out what the inner Maybe type is, we need to await
                 with asyncio.Runner() as runner:
-                    result = runner.run(fn(inner))
-                match result.inner:
-                    case None:
-                        return Maybe(inner=None)
-                    case _:
-                        return result
+                    return runner.run(fn(inner))
 
     def do(self, fn: Callable[[T], T]) -> "Maybe[T]":
         match self.inner:
