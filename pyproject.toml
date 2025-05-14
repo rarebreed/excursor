@@ -1,7 +1,7 @@
 [project]
 name = "excursor"
 version = "0.1.0"
-description = "Add your description here"
+description = "Learn math for bayesian neural nets"
 readme = "README.md"
 authors = [
     { name = "Sean Toner", email = "placeoftheway@gmail.com" }
