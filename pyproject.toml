@@ -69,7 +69,10 @@ build-backend = "poetry.core.masonry.api"
 [tool.ruff]
 fix = true
 line-length = 120
-target-version = "py311"
+target-version = "py312"
+
+[tool.ruff.lint]
+ignore = ["E731", "E402"]
 
 [tool.autopep8]
 max_line_length = 120
