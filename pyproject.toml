@@ -1,69 +1,47 @@
-[tool.poetry]
+[project]
 name = "excursor"
-version = "0.1.2"
-description = ""
-authors = ["Sean Toner <placeoftheway@gmail.com>"]
+version = "0.1.0"
+description = "Learn math for bayesian neural nets"
 readme = "README.md"
-license = "Apache-2.0"
-
-[tool.poetry.dependencies]
-python = "^3.12"
-numpy = "^1.26"
-sympy = "^1.12"
-daak = "^0.1.1"
-
-# serve: service deps
-httpx = {version = "^0.24", optional = true}
-fastapi = {version = "^0.101.1", optional = true}
-uvicorn = {extras = ["standard"], version = "^0.23.2", optional = true}
-pydantic = {version = "^2.4", optional = true}
-
-# viz: visualization including jupyter
-ipywidgets = {version = "^8.0", optional = true}
-jupyterlab = {version = "^4.0", optional = true}
-ipykernel = "^6.29.0"
-
-# viz
-holoviews = {extras = ["recommended"], version = "^1.18.1", optional = true}
-plotly = {version = "^5.18.0", optional = true}
-matplotlib = {version = "^3.8.3", optional = true}
-seaborn = {version = "^0.13.2", optional = true}
-
-# If you are on linux, uncomment the torch line below
-#torch = {version = "^2.0.1+cpu", optional = true, source = "pytorch"}
-torch = {version = "^2.2.1+cpu", optional = true}
-# If you are not on a mac, comment this line out
-
-# data: tools for data analytics, cleaning and ops
-polars = {extras = ["numpy", "pandas", "pyarrow"], version = "^0.20.5", optional = true}
-pyarrow = {version = "^15.0.0", optional = true}
-
-[tool.poetry.group.dev.dependencies]
-ruff = "^0.0.286"
-pytest = "^7.4"
-autopep8 = "^2.0.4"
-pycodestyle = "2.10.0"
-pytest-asyncio = "^0.21.1"
-
-[tool.poetry.extras]
-viz = ["ipywidgets", "jupyterlab", "plotly", "holoviews", "matplotlib", "seaborn"]
-ml = ["torch"]
-serve = ["httpx", "fastapi", "uvicorn", "pydantic"]
-data = ["polars", "pyarrow", "duckdb"]
-
-[tool.poetry.scripts]
-py-dev = {callable = "excursor.core.installer:main"}
-py-dev39 = {callable = "excursor.core.installer_39:main"}
-
-[[tool.poetry.source]]
-name = "pytorch"
-# url = "https://download.pytorch.org/whl/cpu"
-url = "https://download.pytorch.org/whl/cu121"
-priority = "supplemental"
+authors = [
+    { name = "Sean Toner", email = "placeoftheway@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "daak>=0.1.2",
+    "daft>=0.4.14",
+    "fastapi>=0.115.12",
+    "httpx>=0.28.1",
+    "ipywidgets>=8.1.7",
+    "jupyterlab>=4.4.2",
+    "markupsafe>=3.0.2",
+    "plotly>=6.0.1",
+    "pydantic>=2.11.4",
+    "pyro-ppl>=1.9.1",
+    "sympy>=1.14.0",
+    "torch>=2.7.0",
+    "tqdm>=4.67.1",
+    "uvicorn>=0.34.2",
+]
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv.sources]
+torch = { index = "pytorch" }
+markupsafe = { index = "pypi" }
+
+[[tool.uv.index]]
+name = "pypi"
+url = "https://pypi.org/simple/"
+
+
+[[tool.uv.index]]
+# Optional name for the index.
+name = "pytorch"
+# Required URL for the index.
+url = "https://download.pytorch.org/whl/cu128"
 
 
 [tool.ruff]
@@ -76,8 +54,14 @@ ignore = ["E731", "E402"]
 
 [tool.autopep8]
 max_line_length = 120
-ignore = "E501,W6"  # or ["E501", "W6"]
+ignore = "E501,W6"  # or["E501", "W6"]
 in-place = true
 recursive = true
 aggressive = 3
 exclude = "venv/"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.5",
+    "pytest-asyncio>=0.26.0",
+]

@@ -1,5 +1,5 @@
 
-from excursor.func import Maybe
+from src.excursor.func import Maybe
 
 
 def test_maybe():

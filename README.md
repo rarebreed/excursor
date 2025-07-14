@@ -1,53 +1,91 @@
 # excursor
 
-excursor means to scout or spy in latin.  excursor is a tool to learn python, mojo, and machine learning. It does so by
-building up some projects and notebooks to introduce concepts
+excursor means to scout or spy in latin.  `excursor` is a tool to learn about machine learning from first principles.
+This means understanding the math behind how different machine learning models work.  It will focus on Bayesian Neural
+Networks (BNN), and specifically Pretrained Fitted Networks (PFN).  Since PFN are also transformers, it will cover them
+as well.
 
-## Installing Prerequisites
+It does so with tutorials on math including:
 
-excursor comes with an installer module to install the development tools that will be needed.  You will need at a 
-minimum the following installed:
+- Linear algebra
+    - linear equations and transformations
+    - Matrices and 
+    - Eigenvalues and vectors
+    - spans, SVD and PCA
+- Calculus
+    - Precalc and kinds of functions
+    - Differential Calculus
+    - Integral Calculus
+    - Vector Calculus
+- Probability and statistics
+    - Distributions
+    - Bayes Theorem and inference
+    - Variational Inference
+    - Modelling and sampling
+- Machine learning
+    - Loss/cost/optimization functions
+    - softmax
+    - cross entropy
+    - different activation functions
 
-- git
-- python 3.9+
-- pip
+A capstone project will be to create a BNN that is trained on flaky tests, since flaky tests are probabilistic in nature
 
-First, create a virtual environment
+As a bonus, we will also cover some other math fields for quantum computing:
+
+- Abstract Algebra
+    - groups
+    - rings
+    - fields
+    - homomorphisms and isomorphisms
+
+
+## Installing 
+
+excursor uses uv as its dependency manager, so the first thing to do is install uv.  Go to their site at
+
+https://docs.astral.sh/uv/getting-started/installation/
+
+and follow the directions according to your operating system.  For linux and mac, it will be simple;
 
 ```bash
-git clone https://github.com/rarebreed/excursor.git
-cd excursor
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-This will clone excursor on your system.  Then run the following commands:
+## Installing python
 
-- Install python devel deps: `python3 -m excursor.core.installer sys`
-- Install asdf python manager: `python3 -m excursor.core.installer asdf`
-- Activate asdf: `source ~/.zshrc`
-- Install poetry project manager: `python3 -m excursor.core.installer poetry`
-- Install virtualenv: `python3 -m excursor.core.installer venv`
-- Optional (if you want python 3.9.x): `asdf install python 3.9.18`
-    - And to make it the default: `asdf global python 3.9.18`
+With uv, this is very simple and can be done through uv itself
 
-You can also run the commands all at once, but on the first run through, it is recommended to install each one at a time
+```
+uv python install 3.13
+```
+
+## Managing virtual environments
+
+uv can also create and manage virtual environments
 
 ```bash
-python3 -m excursor.core.installer sys asdf poetry venv
+uv venv .venv
+
+## For bash or zsh
+source .venv/bin/activate
+## for nushell
+overlay use .venv/bin/activate.nu
+##  for powershell
+.venv/Scripts/activate.ps1
 ```
 
-Once all the features are installed, you can install the full excursor dependencies using `poetry`
+Note that by default, uv expects the virtual environment folder to be named `.venv`.  You can set a different name as an
+the environment variable `VIRTUAL_ENV=/path/to/vnv`
 
-```bash
-poetry install --all-extras --with dev
-```
+Even if you forget to create the .venv, uv will create a .venv for you when you add a dependency
 
-Skip any of the commands above if you already have asdf, poetry, or virtualenv already installed.
+## Using with VS Code
 
-## Uninstalling a feature
+Normally, once VS Code detects a `.venv` folder in your worksace, a messaage will popup prompting if you wish to use it
+as your default interpreter.
 
-You can also uninstall a feature by appending with a `-c` or `--clean` at the end.  It is recommended to uninstall in
-the reverse order as above (eg, clean venv, then poetry, then asdf)
+If it does not, you can do the following.  Open a python file, and select the python interpreter to use with
+`CTRL+SHIFT+P` and  then selcting the `Python Select Interpreter` choice.  Then click the `Enter path` option and enter
+the path to where the virtual environment folder is. installed the default environment (or dev environment).
 
-```bash
-python3 -m excursor.core.installer venv poetry asdf -c
-```
+Do the same for the Jupyter notebooks.  Click on the `Select Kernel` then `Python Environments` then choose your python interpreter as above.  If you don't see it listed, follow the directions above by opening a python file, and selecting the interpreter.
