@@ -27,6 +27,11 @@ It does so with tutorials on math including:
     - softmax
     - cross entropy
     - different activation functions
+- Creating a BNN
+    - start locally
+    - learn how to do distributed training
+        - create a Ray kubernetes cluster
+        
 
 A capstone project will be to create a BNN that is trained on flaky tests, since flaky tests are probabilistic in nature
 

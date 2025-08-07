@@ -23,7 +23,7 @@ class Monad[T](Functor[T], Protocol):
 
     # this took a bit of playing with to figure out
     # @abstractmethod
-    def flat_map[R, M: "Monad"](self, fun: Callable[[T], M]) -> M:
+    def flat_map[R](self, fun: Callable[[T], "Monad[R]"]) -> "Monad[R]":
         ...
 
 
@@ -41,7 +41,8 @@ class Maybe[T](Monad[T]):
     def flat_map[R](self, fun: Callable[[T], "Maybe[R]"]) -> "Maybe[R]":
         match self.inner:
             case None:
-                return Maybe(None)
+                r: Maybe[R] =  Maybe(None)
+                return r
             case inner:
                 return fun(inner)
 
