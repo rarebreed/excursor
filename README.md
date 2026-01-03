@@ -2,10 +2,7 @@
 
 excursor means to scout or spy in latin.  `excursor` is a tool to learn about machine learning from first principles.
 This means understanding the math behind how different machine learning models work.  It will focus on Bayesian Neural
-Networks (BNN), and specifically Pretrained Fitted Networks (PFN).  Since PFN are also transformers, it will cover them
-as well.
-
-It does so with tutorials on math including:
+Networks (BNN).  To learn about BNN's, we will first learn about Bayesian inference, and to do this we will need to learn about probability and statistics.  To fulfill this goal, excursor has a series of tutorials on math including:
 
 - Linear algebra
     - linear equations and transformations
@@ -35,6 +32,11 @@ It does so with tutorials on math including:
 
 A capstone project will be to create a BNN that is trained on flaky tests, since flaky tests are probabilistic in nature
 
+We will start by building a Variational Autoencoder (VAE) that will be trained on log outputs of various programs.  The VAE will learn the distribution of log outputs of various programs and be able to generate new log outputs that are similar to the ones it has seen and also find clusters of similar patterns in the log outputs (eg, the failure modes of the programs).
+
+1. Find open source projects with test logs to use as a dataset
+2. Use the burn.dev library to create the autoencoder
+
 As a bonus, we will also cover some other math fields for quantum computing:
 
 - Abstract Algebra
@@ -46,7 +48,7 @@ As a bonus, we will also cover some other math fields for quantum computing:
 
 ## Installing 
 
-excursor uses uv as its dependency manager, so the first thing to do is install uv.  Go to their site at
+Currently, excursor uses uv as its dependency manager, so the first thing to do is install uv.  Go to their site at
 
 https://docs.astral.sh/uv/getting-started/installation/
 
@@ -56,7 +58,7 @@ and follow the directions according to your operating system.  For linux and mac
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-## Installing python
+### Installing python
 
 With uv, this is very simple and can be done through uv itself
 
@@ -64,7 +66,7 @@ With uv, this is very simple and can be done through uv itself
 uv python install 3.13
 ```
 
-## Managing virtual environments
+### Managing virtual environments
 
 uv can also create and manage virtual environments
 

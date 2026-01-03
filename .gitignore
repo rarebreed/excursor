@@ -10,3 +10,11 @@ venv/
 dist/# pixi environments
 .pixi
 
+# pixi environments
+.pixi/*
+!.pixi/config.toml
+
+
+# Added by cargo
+
+/target

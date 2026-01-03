@@ -1,29 +1,27 @@
-[project]
-name = "excursor"
-version = "0.1.0"
-description = "Add a short description here"
+[workspace]
 authors = ["Sean Toner <placeoftheway@gmail.com>"]
-channels = ["conda-forge", "https://conda.modular.com/max-nightly"]
+channels = ["conda-forge"]
+name = "excursor"
 platforms = ["linux-64"]
+version = "0.1.0"
 
 [tasks]
 fmt = "autopep8 -i -r ."
 lint = "ruff check --fix ."
 
 [dependencies]
-python = ">=3.12.2,<3.13"
-numpy = ">=1.26.4,<1.27"
-sympy = ">=1.12,<2"
-httpx = ">=0.28.0,<0.29"
-pydantic = ">=2.7.1"
-ipywidgets = ">=8.1.2,<8.2"
-jupyterlab = ">=4.1.5,<4.2"
-holoviews = ">=1.18.3,<1.19"
-pytest = "*"
-ruff = "*"
-autopep8 = "*"
-pytest-asyncio = "*"
-modular = ">=25.5.0.dev2025071105,<26"
+python = "3.13.*"
+rust = ">=1.92.0,<1.93"
+loguru = ">=0.7.3,<0.8"
 
-[pypi-dependencies]
-daak = "*"
+[feature.dev.dependencies]
+autopep8 = "*"
+ruff = "*"
+
+[feature.test.dependencies]
+pytest = "*"
+pytest-asyncio = "*"
+
+[environments]
+dev = ["dev"]
+test = ["test"]

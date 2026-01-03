@@ -41,7 +41,7 @@ class Maybe[T](Monad[T]):
     def flat_map[R](self, fun: Callable[[T], "Maybe[R]"]) -> "Maybe[R]":
         match self.inner:
             case None:
-                r: Maybe[R] =  Maybe(None)
+                r: Maybe[R] = Maybe(None)
                 return r
             case inner:
                 return fun(inner)
