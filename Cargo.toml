@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 burn = { version = "0.19.1", features = ["fusion", "std", "train", "tui", "wgpu"] }
+splintr = { version = "0.8.0", features = ["python"] }
