@@ -4,5 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-burn = { version = "0.19.1", features = ["fusion", "std", "train", "tui", "wgpu"] }
+anyhow = "1.0.101"
+aws-config = "1.8.13"
+aws-sdk-s3 = "1.122.0"
+burn = { version = "0.20.0", features = ["fusion", "std", "train", "tui", "wgpu"] }
 splintr = { version = "0.8.0", features = ["python"] }
+tokio = "1.49.0"

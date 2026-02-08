@@ -5,6 +5,5 @@
 /// 2. the latent space, which is the bottleneck hidden layer
 /// 3. a decoder
 /// 4. A config for training hyperparams
-/// 5. 
-
+/// 5.
 pub mod tokenizer;
