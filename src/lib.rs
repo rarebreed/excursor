@@ -6,4 +6,4 @@
 /// 3. a decoder
 /// 4. A config for training hyperparams
 /// 5.
-pub mod tokenizer;
+pub mod input_data;
