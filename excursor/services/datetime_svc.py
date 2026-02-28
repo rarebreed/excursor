@@ -35,3 +35,7 @@ def get_interval(interval: Interval):
     if start > end:
         raise HTTPException(status_code=400, detail="from_delta must be greater than until_delta")
     return {"interval": f"{start.isoformat()}/{end.isoformat()}"}
+
+
+@app.post("/player/add")
+def add_player(): ...

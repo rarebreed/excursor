@@ -26,10 +26,8 @@ def make_test_result(days_ago: int, hours: int):
     executed_on = now - timedelta(days=days_ago, hours=hours)
     results: list[TestState] = ["pass", "fail", "skip", "error"]
     result = results[randint(0, 3)]
-    exceptions = ["NullPointerException on foo",
-                  "ClientException with status 400"]
-    fail_messages = ["expected True but found False",
-                     "Did not meet the minimum required value"]
+    exceptions = ["NullPointerException on foo", "ClientException with status 400"]
+    fail_messages = ["expected True but found False", "Did not meet the minimum required value"]
     exception = None
     fail_msg = None
     match result:
@@ -50,7 +48,7 @@ def make_test_result(days_ago: int, hours: int):
         duration=duration,
         data_path=data_path,
         exception=exception,
-        fail_messge=fail_msg
+        fail_messge=fail_msg,
     )
 
 

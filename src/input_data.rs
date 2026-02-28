@@ -172,3 +172,14 @@ impl LogDataLoader {
             .unwrap()
     }
 }
+
+pub fn create_embeddings(data: DataSource) -> Result<Vec<u32>, Box<dyn std::error::Error>> {
+    let log_data_loader = LogDataLoader::builder()
+        .train_type("deepseek_v3")
+        .data_source(data)
+        .max_line_length(40)
+        .build()?;
+    let tokens = log_data_loader.load()?;
+    println!("Tokens: {:?}", tokens);
+    Ok(tokens)
+}

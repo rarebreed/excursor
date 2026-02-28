@@ -13,7 +13,6 @@ This is a rough outline of how to create a pytest plugin
 - It is fairly common to define your own pytest_addoption to add CLI options
 """
 
-
 from typing import Mapping, Tuple, TypeAlias
 from pytest import TestReport, CollectReport, Config
 import pytest
@@ -22,16 +21,11 @@ CustomReport: TypeAlias = Tuple[str, str, str | Tuple[str, Mapping[str, bool]]]
 
 
 class PluginReporter:
-
     def __init__(self):
         self.name: str = "PluginReporter"
 
     @pytest.hookimpl(hookwrapper=True)
-    def pytest_report_teststatus(
-        self,
-        report: CollectReport | TestReport,
-        config: Config
-    ):
+    def pytest_report_teststatus(self, report: CollectReport | TestReport, config: Config):
         print("report teststatus")
         match report:
             case CollectReport():

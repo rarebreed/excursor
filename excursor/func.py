@@ -1,4 +1,3 @@
-
 from abc import abstractmethod
 import asyncio
 from dataclasses import dataclass
@@ -6,25 +5,19 @@ from typing import Any, Callable, Coroutine, Iterable, Protocol, Self
 
 
 class Functor[T](Protocol):
-
     @abstractmethod
-    def map[R](self, fun: Callable[[T], R]) -> "Functor[R]":
-        ...
+    def map[R](self, fun: Callable[[T], R]) -> "Functor[R]": ...
 
 
 class Applicative[T](Functor[T], Protocol):
-
     @classmethod
-    def lift(cls, a: T) -> Self:
-        ...
+    def lift(cls, a: T) -> Self: ...
 
 
 class Monad[T](Functor[T], Protocol):
-
     # this took a bit of playing with to figure out
     # @abstractmethod
-    def flat_map[R](self, fun: Callable[[T], "Monad[R]"]) -> "Monad[R]":
-        ...
+    def flat_map[R](self, fun: Callable[[T], "Monad[R]"]) -> "Monad[R]": ...
 
 
 @dataclass
@@ -111,12 +104,14 @@ class Iter[T](Functor[T]):
                     raise Exception("num arg must be >= 1")
                 return Iter(inner=(i for ind, i in enumerate(self.inner) if ind < until))
             case fn:
+
                 def gen():
                     for i in self.inner:
                         if not fn(i):
                             yield i
                         else:
                             break
+
                 return Iter(inner=gen())
 
     def drop(self, until: int | Callable[[T], bool]) -> "Iter[T]":
@@ -146,6 +141,7 @@ class Iter[T](Functor[T]):
                     raise Exception("can not drop negative amount of items")
                 return Iter(inner=(x for i, x in enumerate(self.inner) if i >= until))
             case fn:
+
                 def gen():
                     matched = True
                     for i in self.inner:
@@ -153,6 +149,7 @@ class Iter[T](Functor[T]):
                             matched = fn(i)
                         if not matched:
                             yield i
+
                 return Iter(inner=gen())
 
     def collect[R](self, ret: Callable[[Iterable[Any]], R]) -> R:
@@ -179,6 +176,7 @@ class Iter[T](Functor[T]):
 print(f"{__name__}")
 
 if __name__ == "__main__":
+
     def doubler(x: int) -> int | None:
         if x < 10:
             return None
