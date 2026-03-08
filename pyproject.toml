@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "Sean Toner", email = "placeoftheway@gmail.com" }
 ]
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 dependencies = [
     "daak>=0.1.2",
     "daft>=0.6.5",
