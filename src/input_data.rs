@@ -88,9 +88,9 @@ impl DataSourceTrait for TextDataLoader {
 }
 
 impl Normalizer for TextDataLoader {
-    /// For our use case, which is loading log files, we need to check for a few things:
-    /// 1. get the largest log line
-    /// 2. if the largest log line is longer than max_line_length, split it into multiple lines
+    /// For our use case, which is loading large text files, we need to check for a few things:
+    /// 1. get the largest line
+    /// 2. if the largest line is longer than max_line_length, split it into multiple lines
     fn normalize(&self, text: &str) -> Result<String> {
         // TODO: parallelize this
         let lines = text.split('\n').map(|line| {
@@ -173,11 +173,14 @@ impl TextDataLoader {
     }
 }
 
-pub fn create_embeddings(data: DataSource) -> Result<Vec<u32>, Box<dyn std::error::Error>> {
+pub fn create_embeddings(
+    data: DataSource,
+    max_len: usize,
+) -> Result<Vec<u32>, Box<dyn std::error::Error>> {
     let log_data_loader = TextDataLoader::builder()
         .train_type("deepseek_v3")
         .data_source(data)
-        .max_line_length(40)
+        .max_line_length(max_len)
         .build()?;
     let tokens = log_data_loader.load()?;
     println!("Tokens: {:?}", tokens);
