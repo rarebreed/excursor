@@ -31,7 +31,7 @@ pub enum DataSource {
 /// struct for data loader
 ///
 ///
-pub struct LogDataLoader {
+pub struct TextDataLoader {
     pub tokenizer: Tokenizer,
     pub data_source: DataSource,
     pub max_line_length: usize,
@@ -47,7 +47,7 @@ pub trait Normalizer {
     fn normalize(&self, text: &str) -> Result<String>;
 }
 
-impl DataSourceTrait for LogDataLoader {
+impl DataSourceTrait for TextDataLoader {
     fn load(&self) -> Result<Vec<u32>> {
         match &self.data_source {
             DataSource::String(text) => {
@@ -87,7 +87,7 @@ impl DataSourceTrait for LogDataLoader {
     }
 }
 
-impl Normalizer for LogDataLoader {
+impl Normalizer for TextDataLoader {
     /// For our use case, which is loading log files, we need to check for a few things:
     /// 1. get the largest log line
     /// 2. if the largest log line is longer than max_line_length, split it into multiple lines
@@ -139,7 +139,7 @@ impl LogDataLoaderBuilder {
         self
     }
 
-    pub fn build(self) -> Result<LogDataLoader> {
+    pub fn build(self) -> Result<TextDataLoader> {
         let tokenizer = self
             .tokenizer
             .ok_or_else(|| anyhow::anyhow!("Tokenizer must be set"))?;
@@ -150,7 +150,7 @@ impl LogDataLoaderBuilder {
             .max_line_length
             .ok_or_else(|| anyhow::anyhow!("Max line length must be set"))?;
 
-        Ok(LogDataLoader {
+        Ok(TextDataLoader {
             tokenizer,
             data_source,
             max_line_length,
@@ -158,7 +158,7 @@ impl LogDataLoaderBuilder {
     }
 }
 
-impl LogDataLoader {
+impl TextDataLoader {
     pub fn builder() -> LogDataLoaderBuilder {
         LogDataLoaderBuilder::new()
     }
@@ -174,7 +174,7 @@ impl LogDataLoader {
 }
 
 pub fn create_embeddings(data: DataSource) -> Result<Vec<u32>, Box<dyn std::error::Error>> {
-    let log_data_loader = LogDataLoader::builder()
+    let log_data_loader = TextDataLoader::builder()
         .train_type("deepseek_v3")
         .data_source(data)
         .max_line_length(40)
