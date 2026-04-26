@@ -6,7 +6,7 @@ platforms = ["linux-64", "win-64"]
 version = "0.1.0"
 
 [tasks]
-fmt = "autopep8 -i -r ."
+fmt = "ruff format"
 lint = "ruff check --fix ."
 
 [dependencies]

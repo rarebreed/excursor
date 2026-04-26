@@ -48,7 +48,7 @@ url = "https://download.pytorch.org/whl/cu128"
 [tool.ruff]
 fix = true
 line-length = 120
-target-version = "py313"
+target-version = "py314"
 
 [tool.ruff.lint]
 ignore = ["E731", "E402"]

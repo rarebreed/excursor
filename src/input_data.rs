@@ -1,4 +1,7 @@
-/// crate for tokenizing text that will be used in the encoder of the VAE
+//! crate for loading data that will be used in the encoder of the VAE
+//!
+//! It includes a tokenizer, a data source, and a normalizer
+
 use anyhow::Result;
 use aws_config::BehaviorVersion;
 use aws_sdk_s3::Client;
@@ -14,7 +17,7 @@ pub fn make_tokenizer(train_type: &str) -> Tokenizer {
 /// A path to an S3 object including bucket and object key
 ///
 /// Example: s3://bucket/key
-pub struct S3Uri(String);
+// pub struct S3Uri(String);
 
 /// enum for data source
 ///
@@ -28,17 +31,20 @@ pub enum DataSource {
     S3Uri(String),
 }
 
-/// struct for data loader
+/// struct for log data
 ///
-///
+/// Represents large text files such as logs or books
 pub struct LogDataLoader {
+    /// The tokenizer to use for tokenizing the data
     pub tokenizer: Tokenizer,
+    /// The data source to use for loading the data
     pub data_source: DataSource,
+    /// The maximum length of a line to use for tokenizing the data
     pub max_line_length: usize,
 }
 
 /// Handles the process of loading data from a data source
-pub trait DataSourceTrait {
+pub trait DataLoader {
     fn load(&self) -> Result<Vec<u32>>;
 }
 
@@ -47,7 +53,7 @@ pub trait Normalizer {
     fn normalize(&self, text: &str) -> Result<String>;
 }
 
-impl DataSourceTrait for LogDataLoader {
+impl DataLoader for LogDataLoader {
     fn load(&self) -> Result<Vec<u32>> {
         match &self.data_source {
             DataSource::String(text) => {
@@ -88,9 +94,9 @@ impl DataSourceTrait for LogDataLoader {
 }
 
 impl Normalizer for LogDataLoader {
-    /// For our use case, which is loading log files, we need to check for a few things:
-    /// 1. get the largest log line
-    /// 2. if the largest log line is longer than max_line_length, split it into multiple lines
+    /// For our use case, which is loading text files, we need to check for a few things:
+    /// 1. get the largest text line
+    /// 2. if the largest text line is longer than max_line_length, split it into multiple lines
     fn normalize(&self, text: &str) -> Result<String> {
         // TODO: parallelize this
         let lines = text.split('\n').map(|line| {
@@ -104,13 +110,13 @@ impl Normalizer for LogDataLoader {
     }
 }
 
-pub struct LogDataLoaderBuilder {
+pub struct TextDataLoaderBuilder {
     tokenizer: Option<Tokenizer>,
     data_source: Option<DataSource>,
     max_line_length: Option<usize>,
 }
 
-impl LogDataLoaderBuilder {
+impl TextDataLoaderBuilder {
     pub fn new() -> Self {
         Self {
             tokenizer: None,
@@ -159,8 +165,8 @@ impl LogDataLoaderBuilder {
 }
 
 impl LogDataLoader {
-    pub fn builder() -> LogDataLoaderBuilder {
-        LogDataLoaderBuilder::new()
+    pub fn builder() -> TextDataLoaderBuilder {
+        TextDataLoaderBuilder::new()
     }
 
     pub fn new(train_type: &str, data_source: DataSource, max_line_length: usize) -> Self {
