@@ -10,17 +10,17 @@ fmt = "ruff format"
 lint = "ruff check --fix ."
 
 [dependencies]
-python = ">=3.14.3,<3.15"
-rust = ">=1.93.1,<1.94"
+python = ">=3.14.4,<3.15"
+rust = ">=1.94.0,<1.99"
 loguru = ">=0.7.3,<0.8"
-pytest = ">=9.0.2,<10"
+pytest = ">=9.0.3,<10"
 
 [feature.dev.dependencies]
 autopep8 = ">=2.3.2,<3"
-ruff = ">=0.15.5,<0.16"
+ruff = ">=0.15.11,<0.16"
 
 [feature.test.dependencies]
-pytest = ">=9.0.2,<10"
+pytest = ">=9.0.3,<10"
 pytest-asyncio = ">=1.3.0,<2"
 
 [environments]
@@ -28,8 +28,9 @@ dev = ["dev"]
 test = ["test"]
 
 [pypi-dependencies]
-fastapi = { version = ">=0.135.1, <0.136", extras = ["standard"] }
-pylance = ">=0.39.0, <0.40"
+fastapi = { version = ">=0.136.1, <0.137", extras = ["standard"] }
 pyarrow = ">=23.0.1, <24"
-daft = { version = ">=0.7.4, <0.8", extras = ["lance", "aws"] }
-lancedb = ">=0.29.2, <0.30"
+daft = { version = ">=0.7.9, <0.8", extras = ["lance", "aws"] }
+lancedb = ">=0.30.2, <0.31"
+numpy = ">=2.4.4, <3"
+ipykernel = ">=7.2.0, <8"
